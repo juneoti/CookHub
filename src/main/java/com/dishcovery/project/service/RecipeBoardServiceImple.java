@@ -2,13 +2,7 @@ package com.dishcovery.project.service;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,15 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.dishcovery.project.domain.HashtagsVO;
-import com.dishcovery.project.domain.IngredientsVO;
-import com.dishcovery.project.domain.MethodsVO;
-import com.dishcovery.project.domain.RecipeBoardVO;
-import com.dishcovery.project.domain.RecipeDetailVO;
-import com.dishcovery.project.domain.RecipeHashtagsVO;
-import com.dishcovery.project.domain.RecipeIngredientsVO;
-import com.dishcovery.project.domain.SituationsVO;
-import com.dishcovery.project.domain.TypesVO;
+import com.dishcovery.project.domain.*;
 import com.dishcovery.project.persistence.RecipeBoardMapper;
 import com.dishcovery.project.util.FileUploadUtil;
 import com.dishcovery.project.util.PageMaker;
@@ -49,194 +35,288 @@ public class RecipeBoardServiceImple implements RecipeBoardService {
 
     @Override
     @Transactional
-    public void createRecipe(RecipeBoardVO recipeBoard, List<Integer> ingredientIds, String hashtags, MultipartFile thumbnail) {
+    public void createRecipe(RecipeBoardVO recipeBoard, List<Integer> ingredientIds,
+                            String hashtags, MultipartFile thumbnail,
+                            List<RecipeBoardStepVO> steps, List<RecipeIngredientsDetailVO> ingredientsDetails) {
+        log.info("createRecipe method param: " + recipeBoard);
         if (thumbnail == null || thumbnail.isEmpty()) {
-            throw new IllegalArgumentException("Thumbnail is required for creating a recipe.");
+             throw new IllegalArgumentException("Thumbnail is required for creating a recipe.");
         }
-
         try {
-            // ì¸ë„¤ì¼ ì €ì¥
-            String thumbnailPath = saveThumbnail(thumbnail);
-            recipeBoard.setThumbnailPath(thumbnailPath);
 
-            // ê²Œì‹œê¸€ ID ìƒì„± ë° ì €ì¥
-            int nextId = mapper.getNextRecipeBoardId();
-            recipeBoard.setRecipeBoardId(nextId);
+             // ½æ³×ÀÏ ÀúÀå
+             String thumbnailPath = saveThumbnail(thumbnail);
+             recipeBoard.setThumbnailPath(thumbnailPath);
+             recipeBoard.setMemberId("1");
+            // °Ô½Ã±Û µî·Ï (recipeBoardId´Â MyBatis¿¡¼­ ÀÚµ¿ »ı¼º)
             mapper.insertRecipeBoard(recipeBoard);
+            log.info("insertRecipeBoard called with: " + recipeBoard);
 
-            // ì¬ë£Œ ì •ë³´ ì¶”ê°€
-            addIngredientsToRecipe(nextId, ingredientIds);
+            // ·¹½ÃÇÇ ID °¡Á®¿À±â (selectKey »ç¿ë)
+            int recipeBoardId = recipeBoard.getRecipeBoardId();
 
-            // í•´ì‹œíƒœê·¸ ì²˜ë¦¬
-            saveHashtagsForRecipe(nextId, hashtags);
+           // Àç·á Á¤º¸ Ãß°¡
+            addIngredientsToRecipe(recipeBoardId, ingredientIds);
 
+            // Àç·á »ó¼¼ Á¤º¸ Ãß°¡
+            if (ingredientsDetails != null && !ingredientsDetails.isEmpty()) {
+               addIngredientDetailsToRecipe(recipeBoardId, ingredientsDetails);
+               log.info(ingredientsDetails + "1");
+            }
+            log.info(ingredientsDetails + "2");
+
+            // ÇØ½ÃÅÂ±× Ã³¸®
+            saveHashtagsForRecipe(recipeBoardId, hashtags);
+
+            // ½ºÅÜ Á¤º¸ Ãß°¡
+            if (steps != null && !steps.isEmpty()) {
+                saveRecipeSteps(recipeBoardId, steps);
+           } else {
+               log.info("steps is empty or null");
+            }
         } catch (Exception e) {
+            log.error("createRecipe failed " + e.getMessage(), e);
             throw new RuntimeException("Failed to create recipe with thumbnail and hashtags", e);
         }
     }
 
     @Override
     @Transactional
-    public void updateRecipe(RecipeBoardVO recipeBoard, List<Integer> ingredientIds, String hashtags, MultipartFile thumbnail) {
+    public void updateRecipe(RecipeBoardVO recipeBoard, List<Integer> ingredientIds,
+                            String hashtags, MultipartFile thumbnail,
+                            List<RecipeBoardStepVO> steps,List<Integer> deleteStepIds,
+                            List<RecipeIngredientsDetailVO> ingredientDetails) {
+        log.info("updateRecipe method param: " + recipeBoard);
+         if (thumbnail == null || thumbnail.isEmpty()) {
+            throw new IllegalArgumentException("Thumbnail is required for updating a recipe.");
+        }
         try {
-            // ê¸°ì¡´ ë¡œì§ (ì¸ë„¤ì¼ ì²˜ë¦¬, ì¬ë£Œ ì—…ë°ì´íŠ¸ ë“±)
+            // ±âÁ¸ ½æ³×ÀÏ »èÁ¦ ¹× »õ ½æ³×ÀÏ ÀúÀå
+            RecipeBoardVO existingRecipe = getByRecipeBoardId(recipeBoard.getRecipeBoardId());
+            if (existingRecipe != null && existingRecipe.getThumbnailPath() != null) {
+                FileUploadUtil.deleteFile("C:/uploads", existingRecipe.getThumbnailPath());
+            }
 
-            // ê¸°ì¡´ í•´ì‹œíƒœê·¸ ê°€ì ¸ì˜¤ê¸°
-            List<String> existingHashtags = mapper.getHashtagNamesByRecipeId(recipeBoard.getRecipeBoardId());
+            String thumbnailPath = saveThumbnail(thumbnail);
+            recipeBoard.setThumbnailPath(thumbnailPath);
 
-            // ìƒˆë¡­ê²Œ ì „ë‹¬ëœ í•´ì‹œíƒœê·¸ ë¦¬ìŠ¤íŠ¸ ìƒì„±
-            List<String> newHashtags = hashtags != null ? Arrays.asList(hashtags.split(",")) : List.of();
+            // ·¹½ÃÇÇ ¾÷µ¥ÀÌÆ®
+            mapper.updateRecipeBoard(recipeBoard);
+            log.info("updateRecipeBoard called with: " + recipeBoard);
+            // ±âÁ¸ Àç·á Á¤º¸ »èÁ¦ ¹× Ãß°¡
+            mapper.deleteRecipeIngredientsByRecipeId(recipeBoard.getRecipeBoardId());
+            addIngredientsToRecipe(recipeBoard.getRecipeBoardId(), ingredientIds);
 
-            List<String> hashtagsToRemove = existingHashtags.stream()
-            	    .filter(tag -> !newHashtags.contains(tag))
-            	    .collect(Collectors.toList());
+            // ±âÁ¸ Àç·á »ó¼¼ Á¤º¸ »èÁ¦ ¹× Ãß°¡
+            mapper.deleteRecipeIngredientsDetailsByRecipeId(recipeBoard.getRecipeBoardId());
+             if (ingredientDetails != null && !ingredientDetails.isEmpty()) {
+                addIngredientDetailsToRecipe(recipeBoard.getRecipeBoardId(), ingredientDetails);
+            }
 
-            	List<String> hashtagsToAdd = newHashtags.stream()
-            	    .filter(tag -> !existingHashtags.contains(tag))
-            	    .collect(Collectors.toList());
 
-            // í•´ì‹œíƒœê·¸ ì¶”ê°€ ë° ì‚­ì œ
-            addHashtagsToRecipe(recipeBoard.getRecipeBoardId(), hashtagsToAdd);
-            removeHashtagsFromRecipe(recipeBoard.getRecipeBoardId(), hashtagsToRemove);
+           // ±âÁ¸ ÇØ½ÃÅÂ±× »èÁ¦ ¹× Ãß°¡
+           saveHashtagsForRecipe(recipeBoard.getRecipeBoardId(), hashtags);
 
+            // ½ºÅÜ »èÁ¦
+            if (deleteStepIds != null && !deleteStepIds.isEmpty()) {
+                for (int stepId : deleteStepIds) {
+                     mapper.deleteRecipeBoardStepByStepId(stepId);
+                }
+            }
+             // ½ºÅÜ Á¤º¸ Ãß°¡
+            if (steps != null && !steps.isEmpty()) {
+               saveRecipeSteps(recipeBoard.getRecipeBoardId(), steps);
+            }
         } catch (Exception e) {
-            throw new RuntimeException("Failed to update recipe with hashtags", e);
+             log.error("updateRecipe failed " + e.getMessage(), e);
+             throw new RuntimeException("Failed to update recipe with thumbnail and hashtags", e);
         }
     }
+    @Override
+    @Transactional
+    public void saveRecipeSteps(int recipeBoardId, List<RecipeBoardStepVO> steps) {
+        try {
+            if (steps == null || steps.isEmpty()) {
+                return;
+            }
 
+            for (RecipeBoardStepVO step : steps) {
+                // stepId°¡ nullÀÎÁö Ã¼Å©
+                 if (step.getStepId() == null) {
+                   // »õ·Î¿î ½ºÅÜ Ã³¸®
+                   step.setRecipeBoardId(recipeBoardId);
+                    mapper.insertRecipeBoardStep(step);
+                   log.info("insertRecipeBoardStep called with: " + step);
+                 } else {
+                   // ±âÁ¸ ½ºÅÜ ¼öÁ¤ Ã³¸®
+                    mapper.updateRecipeBoardStep(step);
+                  log.info("updateRecipeBoardStep called with: " + step);
+                }
+             }
+        } catch (Exception e) {
+          log.error("saveRecipeSteps failed " + e.getMessage(), e);
+          throw new RuntimeException("Failed to save recipe steps", e);
+        }
+    }
     @Override
     @Transactional
     public void saveHashtagsForRecipe(int recipeBoardId, String hashtags) {
         try {
-            // ê¸°ì¡´ í•´ì‹œíƒœê·¸ ì—°ê²° ì‚­ì œ
+            // ±âÁ¸ ÇØ½ÃÅÂ±× ¿¬°á »èÁ¦
             mapper.deleteRecipeHashtagsByRecipeId(recipeBoardId);
 
             if (hashtags == null || hashtags.isBlank()) {
                 return;
             }
 
-            // ì‰¼í‘œë¡œ êµ¬ë¶„ëœ í•´ì‹œíƒœê·¸ë¥¼ ì²˜ë¦¬
+            // ½°Ç¥·Î ±¸ºĞµÈ ÇØ½ÃÅÂ±×¸¦ Ã³¸®
             String[] hashtagArray = hashtags.split(",");
             for (String hashtagName : hashtagArray) {
                 hashtagName = hashtagName.trim();
 
                 if (!hashtagName.isEmpty()) {
-                    // í•´ì‹œíƒœê·¸ ì´ë¦„ìœ¼ë¡œ ê²€ìƒ‰
+                    // ÇØ½ÃÅÂ±× ÀÌ¸§À¸·Î °Ë»ö
                     HashtagsVO existingHashtag = mapper.getHashtagByName(hashtagName);
 
                     if (existingHashtag == null) {
-                        // ì‹œí€€ìŠ¤ë¥¼ ì‚¬ìš©í•´ ìƒˆ í•´ì‹œíƒœê·¸ ì¶”ê°€
-                        int nextHashtagId = mapper.getNextHashtagId(); // ì‹œí€€ìŠ¤ í˜¸ì¶œ ë©”ì„œë“œ
+                        // ½ÃÄö½º¸¦ »ç¿ëÇØ »õ ÇØ½ÃÅÂ±× Ãß°¡
+                        int nextHashtagId = mapper.getNextHashtagId(); // ½ÃÄö½º È£Ãâ ¸Ş¼­µå
                         HashtagsVO newHashtag = new HashtagsVO();
-                        newHashtag.setHashtagId(nextHashtagId);
-                        newHashtag.setHashtagName(hashtagName);
+                         newHashtag.setHashtagId(nextHashtagId);
+                         newHashtag.setHashtagName(hashtagName);
 
-                        mapper.insertHashtag(newHashtag); // ìƒˆ í•´ì‹œíƒœê·¸ ì‚½ì…
-                        existingHashtag = newHashtag;
+                       mapper.insertHashtag(newHashtag); // »õ ÇØ½ÃÅÂ±× »ğÀÔ
+                         existingHashtag = newHashtag;
                     }
 
-                    // Recipe-Hashtag ì—°ê²° ì¶”ê°€
+                    // Recipe-Hashtag ¿¬°á Ãß°¡
                     RecipeHashtagsVO recipeHashtag = new RecipeHashtagsVO();
-                    recipeHashtag.setRecipeBoardId(recipeBoardId);
-                    recipeHashtag.setHashtagId(existingHashtag.getHashtagId());
-                    mapper.insertRecipeHashtag(recipeHashtag);
+                     recipeHashtag.setRecipeBoardId(recipeBoardId);
+                   recipeHashtag.setHashtagId(existingHashtag.getHashtagId());
+                   mapper.insertRecipeHashtag(recipeHashtag);
                 }
             }
         } catch (Exception e) {
-            throw new RuntimeException("Failed to save hashtags for recipe", e);
+          throw new RuntimeException("Failed to save hashtags for recipe", e);
         }
     }
-
+    
+    
+     @Override
+    @Transactional
+     public void deleteHashtagForRecipe(int recipeBoardId, int hashtagId){
+        try {
+             mapper.deleteRecipeHashtagsByRecipeIdAndHashtagId(recipeBoardId, hashtagId);
+             int count = mapper.getRecipeCountByHashtagId(hashtagId);
+                if (count == 0) { // ´Ù¸¥ °Ô½Ã±Û°ú ¿¬°áµÇÁö ¾ÊÀº °æ¿ì
+                    mapper.deleteHashtagById(hashtagId);
+                }
+          } catch (Exception e) {
+             log.error("Failed to delete hashtag for recipe", e);
+            throw new RuntimeException("Failed to delete hashtag for recipe", e);
+        }
+    }
     @Override
     public List<HashtagsVO> getHashtagsByRecipeBoardId(int recipeBoardId) {
         log.info("Fetching hashtags for recipe ID: " + recipeBoardId);
         return mapper.getHashtagsByRecipeId(recipeBoardId);
     }
-
     @Override
     @Transactional
     public void deleteRecipe(int recipeBoardId) {
         try {
-            // ê²Œì‹œê¸€ì— ì—°ê²°ëœ í•´ì‹œíƒœê·¸ ì •ë³´ ê°€ì ¸ì˜¤ê¸°
+          // °Ô½Ã±Û¿¡ ¿¬°áµÈ ÇØ½ÃÅÂ±× Á¤º¸ °¡Á®¿À±â
             List<HashtagsVO> hashtags = mapper.getHashtagsByRecipeId(recipeBoardId);
-            RecipeBoardVO existingRecipe = getByRecipeBoardId(recipeBoardId);
-            if (existingRecipe.getThumbnailPath() != null) {
-                deleteThumbnail(existingRecipe.getThumbnailPath());
-            }
-            // ê²Œì‹œê¸€ ì‚­ì œ (í•´ì‹œíƒœê·¸ ê´€ê³„ í¬í•¨)
-            mapper.deleteRecipeHashtagsByRecipeId(recipeBoardId);
-            mapper.deleteRecipeIngredientsByRecipeId(recipeBoardId);
-            mapper.deleteRecipeBoard(recipeBoardId);
+            log.info("Fetched hashtags for recipe ID: " + recipeBoardId + " : " + hashtags);
 
-            // ë‹¤ë¥¸ ê²Œì‹œê¸€ê³¼ ì—°ê²°ë˜ì§€ ì•Šì€ í•´ì‹œíƒœê·¸ ì‚­ì œ
+             // °Ô½Ã±Û¿¡ ¿¬°áµÈ ½ºÅÜ Á¤º¸ °¡Á®¿À±â
+           List<RecipeBoardStepVO> steps = mapper.selectRecipeBoardStepsByBoardId(recipeBoardId);
+           log.info("Fetched steps for recipe ID: " + recipeBoardId + " : " + steps);
+
+            // °Ô½Ã±Û »èÁ¦ (ÇØ½ÃÅÂ±× °ü°è Æ÷ÇÔ)
+             mapper.deleteRecipeIngredientsDetailsByRecipeId(recipeBoardId);
+             log.info("deleteRecipeIngredientDetailsByRecipeId called with id: " + recipeBoardId);
+             mapper.deleteRecipeIngredientsByRecipeId(recipeBoardId);
+              log.info("deleteRecipeIngredientsByRecipeId called with id: " + recipeBoardId);
+            mapper.deleteRecipeBoardStepsByBoardId(recipeBoardId);
+            log.info("deleteRecipeBoardStepsByBoardId called with id: " + recipeBoardId);
+            mapper.deleteRecipeHashtagsByRecipeId(recipeBoardId);
+            log.info("deleteRecipeHashtagsByRecipeId called with id: " + recipeBoardId);
+             mapper.deleteRecipeBoard(recipeBoardId);
+             log.info("deleteRecipeBoard called with id: " + recipeBoardId);
+
+             // ´Ù¸¥ °Ô½Ã±Û°ú ¿¬°áµÇÁö ¾ÊÀº ÇØ½ÃÅÂ±× »èÁ¦
             for (HashtagsVO hashtag : hashtags) {
                 int count = mapper.getRecipeCountByHashtagId(hashtag.getHashtagId());
-                if (count == 0) { // ë‹¤ë¥¸ ê²Œì‹œê¸€ê³¼ ì—°ê²°ë˜ì§€ ì•Šì€ ê²½ìš°
+                 log.info("Checking recipe count for hashtag id : " + hashtag.getHashtagId() + " count : " + count);
+                if (count == 0) { // ´Ù¸¥ °Ô½Ã±Û°ú ¿¬°áµÇÁö ¾ÊÀº °æ¿ì
                     mapper.deleteHashtagById(hashtag.getHashtagId());
+                    log.info("deleteHashtagById called with hashtag id : " + hashtag.getHashtagId());
                 }
             }
-
         } catch (Exception e) {
-            log.error("Failed to delete recipe", e);
+           log.error("Failed to delete recipe", e);
             throw new RuntimeException("Failed to delete recipe", e);
         }
     }
 
     @Override
     public RecipeDetailVO getRecipeDetailById(int recipeBoardId) {
-        log.info("Fetching recipe detail for ID: " + recipeBoardId);
+       log.info("Fetching recipe detail for ID: " + recipeBoardId);
 
-        RecipeBoardVO recipeBoard = mapper.getByRecipeBoardId(recipeBoardId);
-        if (recipeBoard == null) return null;
+       RecipeBoardVO recipeBoard = mapper.getByRecipeBoardId(recipeBoardId);
+         if (recipeBoard == null) return null;
 
-        RecipeDetailVO detail = new RecipeDetailVO();
-        detail.setRecipeBoard(recipeBoard);
-        detail.setTypeName(mapper.getTypeName(recipeBoard.getTypeId()));
-        detail.setMethodName(mapper.getMethodName(recipeBoard.getMethodId()));
+       RecipeDetailVO detail = new RecipeDetailVO();
+       detail.setRecipeBoard(recipeBoard);
+       detail.setTypeName(mapper.getTypeName(recipeBoard.getTypeId()));
+       detail.setMethodName(mapper.getMethodName(recipeBoard.getMethodId()));
         detail.setSituationName(mapper.getSituationName(recipeBoard.getSituationId()));
-        detail.setIngredients(mapper.getIngredientsByRecipeId(recipeBoardId));
-        detail.setHashtags(mapper.getHashtagsByRecipeId(recipeBoardId));
-        
-        return detail;
+       detail.setIngredients(mapper.getIngredientsByRecipeId(recipeBoardId));
+       detail.setHashtags(mapper.getHashtagsByRecipeId(recipeBoardId));
+
+         detail.setSteps(mapper.selectRecipeBoardStepsByBoardId(recipeBoardId)); // ½ºÅÜ Á¤º¸ Ãß°¡
+         return detail;
     }
 
-    @Override
-    public List<IngredientsVO> getIngredientsByRecipeId(int recipeBoardId) {
-        log.info("Fetching ingredients for recipe ID: " + recipeBoardId);
-        return mapper.getIngredientsByRecipeId(recipeBoardId);
-    }
 
-    @Override
-    public List<TypesVO> getAllTypes() {
-        log.info("Fetching all types");
-        return mapper.getAllTypes();
-    }
-
-    @Override
-    public List<MethodsVO> getAllMethods() {
-        log.info("Fetching all methods");
-        return mapper.getAllMethods();
-    }
-
-    @Override
-    public List<SituationsVO> getAllSituations() {
-        log.info("Fetching all situations");
-        return mapper.getAllSituations();
-    }
-
-    @Override
+   @Override
     public List<IngredientsVO> getAllIngredients() {
-        log.info("Fetching all ingredients");
         return mapper.getAllIngredients();
     }
 
     @Override
     public Set<Integer> getSelectedIngredientIdsByRecipeBoardId(int recipeBoardId) {
         log.info("Fetching selected ingredient IDs for recipe ID: " + recipeBoardId);
-        return mapper.getIngredientsByRecipeId(recipeBoardId)
-                     .stream()
-                     .map(IngredientsVO::getIngredientId)
-                     .collect(Collectors.toSet());
+        return mapper.getIngredientsByRecipeId(recipeBoardId).stream().map(IngredientsVO::getIngredientId)
+                .collect(Collectors.toSet());
+    }
+
+     @Override
+    public List<RecipeIngredientsDetailVO> getRecipeIngredientsDetailsByRecipeId(int recipeBoardId){
+      log.info("Fetching recipe ingredient details for ID: " + recipeBoardId);
+        return mapper.getIngredientsDetailByRecipeId(recipeBoardId);
+     }
+
+     @Override
+    public List<TypesVO> getAllTypes() {
+        return mapper.getAllTypes();
+    }
+
+   @Override
+    public List<MethodsVO> getAllMethods() {
+       return mapper.getAllMethods();
+   }
+
+  @Override
+    public List<SituationsVO> getAllSituations() {
+       return mapper.getAllSituations();
+    }
+
+     @Override
+    public List<RecipeBoardStepVO> getRecipeBoardStepsByBoardId(int recipeBoardId) {
+        log.info("Fetching recipe steps for recipe ID: " + recipeBoardId);
+        return mapper.selectRecipeBoardStepsByBoardId(recipeBoardId);
     }
 
     @Override
@@ -250,11 +330,11 @@ public class RecipeBoardServiceImple implements RecipeBoardService {
         if (pagination.getMethodId() != null && pagination.getMethodId() == 1) {
             pagination.setMethodId(null);
         }
-        if (pagination.getSituationId() != null && pagination.getSituationId() == 1) {
+       if (pagination.getSituationId() != null && pagination.getSituationId() == 1) {
             pagination.setSituationId(null);
         }
-        
-        return pagination;
+
+       return pagination;
     }
 
     @Override
@@ -267,7 +347,7 @@ public class RecipeBoardServiceImple implements RecipeBoardService {
         result.put("allSituations", getAllSituations());
 
         int totalCount = mapper.getTotalCountWithFilters(pagination);
-        PageMaker pageMaker = new PageMaker();
+       PageMaker pageMaker = new PageMaker();
         pageMaker.setPagination(pagination);
         pageMaker.setTotalCount(totalCount);
         result.put("pageMaker", pageMaker);
@@ -277,21 +357,20 @@ public class RecipeBoardServiceImple implements RecipeBoardService {
 
     @Override
     public Optional<Resource> getThumbnailByRecipeBoardId(int recipeBoardId) {
-        try {
-            RecipeBoardVO recipeBoard = getByRecipeBoardId(recipeBoardId);
+         try {
+           RecipeBoardVO recipeBoard = getByRecipeBoardId(recipeBoardId);
 
-            if (recipeBoard == null || recipeBoard.getThumbnailPath() == null) {
-                return Optional.empty();
+             if (recipeBoard == null || recipeBoard.getThumbnailPath() == null) {
+                 return Optional.empty();
             }
 
             File file = new File("C:/uploads/" + recipeBoard.getThumbnailPath());
             if (!file.exists()) {
                 return Optional.empty();
             }
-
             return Optional.of(new FileSystemResource(file));
-        } catch (Exception e) {
-            log.error("Failed to fetch thumbnail", e);
+         } catch (Exception e) {
+           log.error("Failed to fetch thumbnail", e);
             return Optional.empty();
         }
     }
@@ -304,11 +383,11 @@ public class RecipeBoardServiceImple implements RecipeBoardService {
         String datePath = FileUploadUtil.makeDatePath().replace("\\", "/");
         FileUploadUtil.saveFile("C:/uploads", thumbnail, savedFileName);
 
-        return datePath + "/" + savedFileName;
+       return datePath + "/" + savedFileName;
     }
 
     private void deleteThumbnail(String thumbnailPath) {
-        if (thumbnailPath != null) {
+      if (thumbnailPath != null) {
             FileUploadUtil.deleteFile("C:/uploads", thumbnailPath);
         }
     }
@@ -319,70 +398,29 @@ public class RecipeBoardServiceImple implements RecipeBoardService {
                 RecipeIngredientsVO recipeIngredient = new RecipeIngredientsVO();
                 recipeIngredient.setRecipeBoardId(recipeBoardId);
                 recipeIngredient.setIngredientId(ingredientId);
-                mapper.insertRecipeIngredient(recipeIngredient);
+                 mapper.insertRecipeIngredient(recipeIngredient);
             });
         }
     }
+    private void addIngredientDetailsToRecipe(int recipeBoardId, List<RecipeIngredientsDetailVO> ingredientDetails) {
+        log.info("addIngredientDetailsToRecipe called with recipeBoardId: " + recipeBoardId + ", ingredientDetails: " + ingredientDetails);
+         if (ingredientDetails == null || ingredientDetails.isEmpty()){
+             log.info("ingredientDetails is null or empty. skipping...");
+              return;
+        }
+          ingredientDetails.forEach(ingredientDetail -> {
+              ingredientDetail.setRecipeBoardId(recipeBoardId);
+              // ingredientDetailId°¡ ÀÌ¹Ì ¼³Á¤µÇ¾î ÀÖ´Ù¸é, ÇØ´ç °ª À¯Áö, ±×·¸Áö ¾ÊÀ¸¸é null·Î À¯Áö (½ÃÄö½º¿¡¼­ ÀÚµ¿ »ı¼º)
+             mapper.insertRecipeIngredientsDetail(ingredientDetail);
+              log.info("insertRecipeIngredientsDetail called with detail : " + ingredientDetail);
+          });
+  }
     
-    @Override
+  @Override
     public List<String> getHashtagNamesByRecipeBoardId(int recipeBoardId) {
-        // í•´ì‹œíƒœê·¸ VO ë¦¬ìŠ¤íŠ¸ë¥¼ ê°€ì ¸ì˜¤ê³ , ì´ë¦„ ë¦¬ìŠ¤íŠ¸ë¡œ ë³€í™˜
-        return mapper.getHashtagsByRecipeId(recipeBoardId).stream()
-                     .map(HashtagsVO::getHashtagName)
-                     .collect(Collectors.toList());
-    }
-    
-    @Override
-    @Transactional
-    public void addHashtagsToRecipe(int recipeBoardId, List<String> hashtagsToAdd) {
-        for (String hashtagName : hashtagsToAdd) {
-            // ìœ íš¨ì„± ê²€ì‚¬: null ë˜ëŠ” ë¹ˆ ë¬¸ìì—´ì€ ì œì™¸
-            if (hashtagName == null || hashtagName.trim().isEmpty()) {
-                continue;
-            }
+        // ÇØ½ÃÅÂ±× VO ¸®½ºÆ®¸¦ °¡Á®¿À°í, ÀÌ¸§ ¸®½ºÆ®·Î º¯È¯
+        return mapper.getHashtagsByRecipeId(recipeBoardId).stream().map(HashtagsVO::getHashtagName)
+                .collect(Collectors.toList());
+   }
 
-            // ê¸°ì¡´ í•´ì‹œíƒœê·¸ê°€ ìˆëŠ”ì§€ í™•ì¸
-            HashtagsVO existingHashtag = mapper.getHashtagByName(hashtagName.trim());
-            int hashtagId;
-
-            if (existingHashtag == null) {
-                // í•´ì‹œíƒœê·¸ê°€ ì—†ìœ¼ë©´ ìƒˆë¡œ ì¶”ê°€
-                hashtagId = mapper.getNextHashtagId();
-                HashtagsVO newHashtag = new HashtagsVO();
-                newHashtag.setHashtagId(hashtagId);
-                newHashtag.setHashtagName(hashtagName.trim());
-                mapper.insertHashtag(newHashtag);
-            } else {
-                // ê¸°ì¡´ í•´ì‹œíƒœê·¸ ì‚¬ìš©
-                hashtagId = existingHashtag.getHashtagId();
-            }
-
-            // Recipe-Hashtag ì—°ê²° ì¶”ê°€
-            RecipeHashtagsVO recipeHashtag = new RecipeHashtagsVO();
-            recipeHashtag.setRecipeBoardId(recipeBoardId);
-            recipeHashtag.setHashtagId(hashtagId);
-            mapper.insertRecipeHashtag(recipeHashtag);
-        }
-    }
-
-    @Override
-    @Transactional
-    public void removeHashtagsFromRecipe(int recipeBoardId, List<String> hashtagsToRemove) {
-        for (String hashtagName : hashtagsToRemove) {
-            // í•´ì‹œíƒœê·¸ ID ê°€ì ¸ì˜¤ê¸°
-            HashtagsVO existingHashtag = mapper.getHashtagByName(hashtagName);
-            if (existingHashtag != null) {
-                int hashtagId = existingHashtag.getHashtagId();
-
-                // Recipe-Hashtag ê´€ê³„ ì‚­ì œ
-                mapper.deleteRecipeHashtagsByRecipeIdAndHashtagId(recipeBoardId, hashtagId);
-
-                // í•´ë‹¹ í•´ì‹œíƒœê·¸ê°€ ë‹¤ë¥¸ Recipeì™€ ì—°ê²°ë˜ì§€ ì•Šì•˜ë‹¤ë©´ í•´ì‹œíƒœê·¸ ì‚­ì œ
-                int recipeCount = mapper.getRecipeCountByHashtagId(hashtagId);
-                if (recipeCount == 0) {
-                    mapper.deleteHashtagById(hashtagId);
-                }
-            }
-        }
-    }
 }

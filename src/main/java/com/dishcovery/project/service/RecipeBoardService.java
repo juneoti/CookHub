@@ -11,8 +11,10 @@ import org.springframework.web.multipart.MultipartFile;
 import com.dishcovery.project.domain.HashtagsVO;
 import com.dishcovery.project.domain.IngredientsVO;
 import com.dishcovery.project.domain.MethodsVO;
+import com.dishcovery.project.domain.RecipeBoardStepVO;
 import com.dishcovery.project.domain.RecipeBoardVO;
 import com.dishcovery.project.domain.RecipeDetailVO;
+import com.dishcovery.project.domain.RecipeIngredientsDetailVO;
 import com.dishcovery.project.domain.SituationsVO;
 import com.dishcovery.project.domain.TypesVO;
 import com.dishcovery.project.util.Pagination;
@@ -21,34 +23,45 @@ public interface RecipeBoardService {
 
     // Recipe CRUD
     RecipeBoardVO getByRecipeBoardId(int recipeBoardId);
-    void createRecipe(RecipeBoardVO recipeBoard, List<Integer> ingredientIds, String hashtags, MultipartFile thumbnail);
-    void updateRecipe(RecipeBoardVO recipeBoard, List<Integer> ingredientIds, String hashtags, MultipartFile thumbnail);
+   void createRecipe(RecipeBoardVO recipeBoard, List<Integer> ingredientIds,
+                       String hashtags, MultipartFile thumbnail,
+                       List<RecipeBoardStepVO> steps, List<RecipeIngredientsDetailVO> ingredientDetails);
+    void updateRecipe(RecipeBoardVO recipeBoard, List<Integer> ingredientIds,
+                     String hashtags, MultipartFile thumbnail,
+                     List<RecipeBoardStepVO> steps,List<Integer> deleteStepIds,
+                     List<RecipeIngredientsDetailVO> ingredientDetails);
     void deleteRecipe(int recipeBoardId);
 
-    // Recipe Details
+   // Recipe Details
     RecipeDetailVO getRecipeDetailById(int recipeBoardId);
 
+
     // Ingredients Management
-    List<IngredientsVO> getIngredientsByRecipeId(int recipeBoardId);
-    List<IngredientsVO> getAllIngredients();
-    Set<Integer> getSelectedIngredientIdsByRecipeBoardId(int recipeBoardId);
+    List<IngredientsVO> getAllIngredients(); // ¸ğµç Àç·á Á¶È¸
+    Set<Integer> getSelectedIngredientIdsByRecipeBoardId(int recipeBoardId); // ·¹½ÃÇÇ¿¡ ¼±ÅÃµÈ Àç·á ID Á¶È¸
+
+    // Recipe Ingredient Details Management
+     List<RecipeIngredientsDetailVO> getRecipeIngredientsDetailsByRecipeId(int recipeBoardId); // Æ¯Á¤ ·¹½ÃÇÇÀÇ ¸ğµç Àç·á »ó¼¼ Á¤º¸ Á¶È¸
 
     // Hashtags Management
-    List<HashtagsVO> getHashtagsByRecipeBoardId(int recipeBoardId); // íŠ¹ì • ë ˆì‹œí”¼ì˜ í•´ì‹œíƒœê·¸ ì¡°íšŒ
-    void saveHashtagsForRecipe(int recipeBoardId, String hashtags); // í•´ì‹œíƒœê·¸ ì €ì¥
+    List<HashtagsVO> getHashtagsByRecipeBoardId(int recipeBoardId); // Æ¯Á¤ ·¹½ÃÇÇÀÇ ÇØ½ÃÅÂ±× Á¶È¸
+    void saveHashtagsForRecipe(int recipeBoardId, String hashtags); // ÇØ½ÃÅÂ±× ÀúÀå
     List<String> getHashtagNamesByRecipeBoardId(int recipeBoardId);
-    void addHashtagsToRecipe(int recipeBoardId, List<String> hashtagsToAdd);
-    void removeHashtagsFromRecipe(int recipeBoardId, List<String> hashtagsToRemove);
-    
+   void deleteHashtagForRecipe(int recipeBoardId, int hashtagId); // Æ¯Á¤ ÇØ½ÃÅÂ±× »èÁ¦
+
     // Types, Methods, Situations
-    List<TypesVO> getAllTypes();
-    List<MethodsVO> getAllMethods();
-    List<SituationsVO> getAllSituations();
+    List<TypesVO> getAllTypes(); // ¸ğµç Type Á¶È¸
+    List<MethodsVO> getAllMethods(); // ¸ğµç Method Á¶È¸
+    List<SituationsVO> getAllSituations(); // ¸ğµç Situation Á¶È¸
 
     // Pagination & Filtering
-    Map<String, Object> getRecipeBoardListWithFilters(Pagination pagination);
-    Pagination preprocessPagination(Pagination pagination);
+    Map<String, Object> getRecipeBoardListWithFilters(Pagination pagination); // ÇÊÅÍ¿Í ÇÔ²² ·¹½ÃÇÇ ¸ñ·Ï Á¶È¸
+    Pagination preprocessPagination(Pagination pagination); // ÆäÀÌÂ¡ Ã³¸® ÁØºñ
 
     // Thumbnail Management
-    Optional<Resource> getThumbnailByRecipeBoardId(int recipeBoardId); // Optionalë¡œ ë¦¬ì†ŒìŠ¤ ë°˜í™˜
+    Optional<Resource> getThumbnailByRecipeBoardId(int recipeBoardId); // Optional·Î ½æ³×ÀÏ ¸®¼Ò½º ¹İÈ¯
+
+    // Recipe Steps Management
+     List<RecipeBoardStepVO> getRecipeBoardStepsByBoardId(int recipeBoardId); // ·¹½ÃÇÇ ½ºÅÜ ¸ñ·Ï Á¶È¸
+     void saveRecipeSteps(int recipeBoardId, List<RecipeBoardStepVO> steps);
 }

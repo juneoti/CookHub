@@ -17,5 +17,7 @@ public class RecipeDetailVO {
     private String methodName;
     private String situationName;
     private List<IngredientsVO> ingredients;
-    private List<HashtagsVO> hashtags; 
+    private List<HashtagsVO> hashtags;
+    private List<RecipeBoardStepVO> steps; // 레시피 스텝 목록 추가
+
 }

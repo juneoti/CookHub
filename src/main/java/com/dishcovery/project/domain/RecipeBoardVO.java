@@ -13,17 +13,22 @@ import java.util.Date;
 @NoArgsConstructor
 public class RecipeBoardVO {
 
-    private int recipeBoardId;
-    private String recipeBoardTitle;
-    private String recipeBoardContent;
-    private int memberId;
-    private Date recipeBoardCreatedDate;
-    private int viewCount;
-    private int typeId;
-    private int methodId;
-    private int situationId;
-    private double avgRating;
-    private int replyCount;
-    private int recipeReviewCount;
-    private String thumbnailPath;
+	private int recipeBoardId;
+	String recipeBoardTitle;
+	String recipeBoardContent;
+	String memberId;
+	Date recipeBoardCreatedDate;
+	int viewCount;
+	int typeId;
+	int methodId;
+	int situationId;
+	int ingredientId;
+	double avgRating;
+	int replyCount;
+	int recipeReviewCount;
+	String thumbnailPath;
+	String recipeTip;
+	String servings;
+	String time;
+	String difficulty;
 }

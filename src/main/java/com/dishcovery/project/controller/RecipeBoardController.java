@@ -1,27 +1,27 @@
 package com.dishcovery.project.controller;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-
+import com.dishcovery.project.domain.RecipeBoardStepVO;
+import com.dishcovery.project.domain.RecipeBoardVO;
+import com.dishcovery.project.domain.RecipeDetailVO;
+import com.dishcovery.project.domain.RecipeIngredientsDetailVO;
+import com.dishcovery.project.service.RecipeBoardService;
+import com.dishcovery.project.util.FileUploadUtil;
+import com.dishcovery.project.util.Pagination;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.extern.log4j.Log4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RequestPart;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.dishcovery.project.domain.RecipeBoardVO;
-import com.dishcovery.project.domain.RecipeDetailVO;
-import com.dishcovery.project.service.RecipeBoardService;
-import com.dishcovery.project.util.Pagination;
-
-import lombok.extern.log4j.Log4j;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 
 @Controller
 @RequestMapping("/recipeboard")
@@ -39,22 +39,20 @@ public class RecipeBoardController {
             @RequestParam(value = "typeId", defaultValue = "1") Integer typeId,
             @RequestParam(value = "situationId", defaultValue = "1") Integer situationId,
             @RequestParam(value = "methodId", defaultValue = "1") Integer methodId,
-            @RequestParam(value = "hashtag", required = false) String hashtag, // Ï∂îÍ∞Ä
             Model model) {
-    	 
-        // Pagination ÏÑ§Ï†ï
+
+        // Pagination º≥¡§
         Pagination pagination = new Pagination(pageNum, pageSize);
         pagination.setIngredientIdsFromString(ingredientIdsStr);
         pagination.setTypeId(typeId != null ? typeId : 1);
         pagination.setSituationId(situationId != null ? situationId : 1);
         pagination.setMethodId(methodId != null ? methodId : 1);
-        pagination.setHashtag(hashtag); // Ï∂îÍ∞Ä
 
-        // RecipeBoard Î™©Î°ù Î∞è Í¥ÄÎ†® Îç∞Ïù¥ÌÑ∞ Í∞ÄÏ†∏Ïò§Í∏∞
+        // RecipeBoard ∏Ò∑œ π◊ ∞¸∑√ µ•¿Ã≈Õ ∞°¡Æø¿±‚
         Map<String, Object> result = recipeBoardService.getRecipeBoardListWithFilters(
                 recipeBoardService.preprocessPagination(pagination));
-        
-        // Î™®Îç∏Ïóê Îç∞Ïù¥ÌÑ∞ Ï∂îÍ∞Ä
+
+        // ∏µ®ø° µ•¿Ã≈Õ √ﬂ∞°
         model.addAllAttributes(result);
         model.addAttribute("selectedTypeId", typeId);
         model.addAttribute("selectedSituationId", situationId);
@@ -62,12 +60,11 @@ public class RecipeBoardController {
         model.addAttribute("ingredientIdsStr", pagination.getIngredientIdsAsString());
         model.addAttribute("selectedPageNum", pageNum);
         model.addAttribute("selectedIngredientIds", ingredientIdsStr != null ? Arrays.asList(ingredientIdsStr.split(",")) : List.of("1"));
-        model.addAttribute("searchHashtag", hashtag); // Ï∂îÍ∞Ä
 
-        // Í≥µÌÜµ Î†àÏù¥ÏïÑÏõÉÏóê Ìè¨Ìï®Îê† ÌéòÏù¥ÏßÄ ÏÑ§Ï†ï
+        // ∞¯≈Î ∑π¿Ãæ∆øÙø° ∆˜«‘µ… ∆‰¿Ã¡ˆ º≥¡§
         model.addAttribute("pageContent", "recipeboard/list.jsp");
 
-        // Í≥µÌÜµ Î†àÏù¥ÏïÑÏõÉ Î∞òÌôò
+        // ∞¯≈Î ∑π¿Ãæ∆øÙ π›»Ø
         return "layout";
     }
 
@@ -81,16 +78,87 @@ public class RecipeBoardController {
         return "recipeboard/register";
     }
 
+
     @PostMapping("/register")
     public String registerRecipe(
-            RecipeBoardVO recipeBoard,
-            @RequestParam(value = "ingredientIds", required = false) List<Integer> ingredientIds,
-            @RequestParam(value = "hashtags", required = false) String hashtags,
-            @RequestPart(value = "thumbnail", required = false) MultipartFile thumbnail) {
-    	log.info("Received hashtags: " + hashtags);
-    	recipeBoardService.createRecipe(recipeBoard, ingredientIds, hashtags, thumbnail);
+        RecipeBoardVO recipeBoard,
+        @RequestParam(value = "ingredientIds", required = false) List<Integer> ingredientIds,
+        @RequestParam(value = "hashtags", required = false) String hashtags,
+        @RequestPart(value = "thumbnail", required = false) MultipartFile thumbnail,
+        @RequestParam(value = "stepDescription", required = false) List<String> stepDescriptions,
+        @RequestPart(value = "stepImage", required = false) List<MultipartFile> stepImages,
+        @RequestParam(value = "servings", required = false) String servings,
+        @RequestParam(value = "time", required = false) String time,
+        @RequestParam(value = "difficulty", required = false) String difficulty,
+        @RequestParam(value = "stepOrder", required = false) List<Integer> stepOrders,
+        @RequestParam(value = "ingredientName", required = false) List<String> ingredientNames,
+        @RequestParam(value = "ingredientAmount", required = false) List<String> ingredientAmounts,
+        @RequestParam(value = "ingredientUnit", required = false) List<String> ingredientUnits,
+        @RequestParam(value = "ingredientNote", required = false) List<String> ingredientNotes
+    ) throws IOException {
+        
+        log.info("Received ingredientNames: " + ingredientNames);
+        log.info("Received ingredientAmounts: " + ingredientAmounts);
+        log.info("Received ingredientUnits: " + ingredientUnits);
+        log.info("Received ingredientNotes: " + ingredientNotes);
+
+        List<RecipeIngredientsDetailVO> ingredientDetails = new ArrayList<>();
+        if (ingredientNames != null) {
+            for (int i = 0; i < ingredientNames.size(); i++) {
+                RecipeIngredientsDetailVO detail = new RecipeIngredientsDetailVO();
+                detail.setIngredientName(ingredientNames.get(i));
+                  if(ingredientAmounts != null && i < ingredientAmounts.size()){
+                          detail.setIngredientAmount(ingredientAmounts.get(i));
+                      }
+                  if(ingredientUnits != null && i < ingredientUnits.size()){
+                         detail.setIngredientUnit(ingredientUnits.get(i));
+                      }
+                   if(ingredientNotes != null && i < ingredientNotes.size()){
+                        detail.setIngredientNote(ingredientNotes.get(i));
+                     }
+                ingredientDetails.add(detail);
+                log.info("Ingredient Detail: " + detail);
+            }
+        }
+
+        List<RecipeBoardStepVO> steps = new ArrayList<>();
+        if (stepDescriptions != null && !stepDescriptions.isEmpty()) {
+            for (int i = 0; i < stepDescriptions.size(); i++) {
+                RecipeBoardStepVO step = new RecipeBoardStepVO();
+                if (stepOrders != null && i < stepOrders.size()) {
+                    Integer order = stepOrders.get(i);
+                    step.setStepOrder(order == null ? i + 1 : order);
+                } else {
+                    step.setStepOrder(i + 1);
+                }
+                step.setStepDescription(stepDescriptions.get(i));
+                if (stepImages != null && i < stepImages.size() && stepImages.get(i) != null && !stepImages.get(i).isEmpty()) {
+                    // ∆ƒ¿œ ∞Ê∑Œ¥¬ Ω«¡¶ ¿˙¿Âµ«¥¬ ∞Ê∑Œ∑Œ ∫Ø∞Ê«ÿæﬂ «’¥œ¥Ÿ.
+                    String stepImageUrl = FileUploadUtil.saveFile("C:/uploads", stepImages.get(i));
+                    step.setStepImageUrl(stepImageUrl);
+                } else {
+                    step.setStepImageUrl(null);
+                }
+                steps.add(step);
+                log.info("Step info in controller: " + step);
+            }
+        }
+
+        log.info("RecipeBoard value before createRecipe method called: " + recipeBoard);
+        if (servings != null) {
+            recipeBoard.setServings(servings);
+        }
+        if (time != null) {
+            recipeBoard.setTime(time);
+        }
+        if (difficulty != null) {
+            recipeBoard.setDifficulty(difficulty);
+        }
+
+        recipeBoardService.createRecipe(recipeBoard, ingredientIds, hashtags, thumbnail, steps, ingredientDetails);
         return "redirect:/recipeboard/list";
     }
+
 
     @GetMapping("/detail/{recipeBoardId}")
     public String getRecipeDetail(@PathVariable int recipeBoardId, Model model) {
@@ -106,6 +174,8 @@ public class RecipeBoardController {
         model.addAttribute("situationName", detail.getSituationName());
         model.addAttribute("ingredients", detail.getIngredients());
         model.addAttribute("hashtags", detail.getHashtags());
+        model.addAttribute("steps", detail.getSteps()); // Ω∫≈‹ ¡§∫∏ √ﬂ∞°
+        model.addAttribute("ingredientDetails", recipeBoardService.getRecipeIngredientsDetailsByRecipeId(recipeBoardId));
         return "recipeboard/detail";
     }
 
@@ -123,34 +193,84 @@ public class RecipeBoardController {
         model.addAttribute("situationsList", recipeBoardService.getAllSituations());
         model.addAttribute("ingredientsList", recipeBoardService.getAllIngredients());
         model.addAttribute("hashtags", recipeBoardService.getHashtagsByRecipeBoardId(recipeBoardId));
-
+        model.addAttribute("steps", recipeBoardService.getRecipeBoardStepsByBoardId(recipeBoardId)); // Ω∫≈‹ ¡§∫∏ √ﬂ∞°
+        model.addAttribute("ingredientDetails", recipeBoardService.getRecipeIngredientsDetailsByRecipeId(recipeBoardId));
         return "recipeboard/update";
     }
 
     @PostMapping("/update")
-    public String updateRecipe(RecipeBoardVO recipeBoard,
-                               @RequestParam(value = "ingredientIds", required = false) List<Integer> ingredientIds,
-                               @RequestParam(value = "hashtags", required = false) String hashtags,
-                               @RequestPart(value = "thumbnail", required = true) MultipartFile thumbnail) {
-        try {
-        	recipeBoardService.updateRecipe(recipeBoard, ingredientIds, hashtags, thumbnail);
+    public String updateRecipe(
+          RecipeBoardVO recipeBoard,
+            @RequestParam(value = "ingredientIds", required = false) List<Integer> ingredientIds,
+            @RequestParam(value = "hashtags", required = false) String hashtags,
+            @RequestPart(value = "thumbnail", required = true) MultipartFile thumbnail,
+             @RequestParam(value = "stepDescription", required = false) List<String> stepDescriptions,
+            @RequestParam(value = "stepImage", required = false)  List<MultipartFile> stepImages,
+             @RequestParam(value = "servings", required = false) String servings,
+            @RequestParam(value = "time", required = false) String time,
+             @RequestParam(value = "difficulty", required = false) String difficulty,
+             @RequestParam(value = "stepOrder", required = false) List<Integer> stepOrders,
+            @RequestParam(value = "deleteStepIds", required = false) List<Integer> deleteStepIds,
+            @RequestParam(value="recipeIngredients", required = false, defaultValue = "[]") String recipeIngredientsJson
+    ) throws IOException {
+      try {
+          ObjectMapper mapper = new ObjectMapper();
+            List<RecipeIngredientsDetailVO> ingredientDetails = new ArrayList<>();
+            if(recipeIngredientsJson != null && !recipeIngredientsJson.trim().isEmpty()){
+                   ingredientDetails = mapper.readValue(recipeIngredientsJson, new TypeReference<List<RecipeIngredientsDetailVO>>(){});
+            }
+
+            List<RecipeBoardStepVO> steps = new ArrayList<>();
+            if (stepDescriptions != null && !stepDescriptions.isEmpty()) {
+                for (int i = 0; i < stepDescriptions.size(); i++) {
+                    RecipeBoardStepVO step = new RecipeBoardStepVO();
+                    if (stepOrders != null && i < stepOrders.size()) {
+                        Integer order = stepOrders.get(i);
+                        step.setStepOrder(order == null ? i + 1 : order);
+                    } else {
+                        step.setStepOrder(i + 1);
+                    }
+                    step.setStepDescription(stepDescriptions.get(i));
+                    if (stepImages != null && i < stepImages.size() && stepImages.get(i) != null && !stepImages.get(i).isEmpty()) {
+                        String stepImageUrl = FileUploadUtil.saveFile("C:/uploads", stepImages.get(i));
+						step.setStepImageUrl(stepImageUrl);
+                    } else {
+                        step.setStepImageUrl(null);
+                    }
+                    steps.add(step);
+                    log.info("step info in controller: " + step);
+                }
+            }
+
+           log.info("RecipeBoard value before updateRecipe method called: " + recipeBoard);
+                if(servings != null){
+                     recipeBoard.setServings(servings);
+               }
+               if(time != null){
+                    recipeBoard.setTime(time);
+                }
+              if(difficulty != null){
+                   recipeBoard.setDifficulty(difficulty);
+               }
+            recipeBoardService.updateRecipe(recipeBoard, ingredientIds, hashtags, thumbnail, steps, deleteStepIds, ingredientDetails);
             return "redirect:/recipeboard/detail/" + recipeBoard.getRecipeBoardId();
-        } catch (IllegalArgumentException e) {
+       } catch (IllegalArgumentException e) {
             log.error("Error updating recipe: " + e.getMessage());
             return "redirect:/recipeboard/update/" + recipeBoard.getRecipeBoardId() + "?error=" + e.getMessage();
         }
     }
 
+
     @PostMapping("/delete/{recipeBoardId}")
     public String deleteRecipe(@PathVariable int recipeBoardId) {
-        recipeBoardService.deleteRecipe(recipeBoardId);
+       recipeBoardService.deleteRecipe(recipeBoardId);
         return "redirect:/recipeboard/list";
     }
 
     @GetMapping("/thumbnail/{recipeBoardId}")
     public ResponseEntity<?> getThumbnail(@PathVariable int recipeBoardId) {
-        return recipeBoardService.getThumbnailByRecipeBoardId(recipeBoardId)
-                .map(resource -> ResponseEntity.ok(resource))
-                .orElseGet(() -> ResponseEntity.notFound().build());
+         return recipeBoardService.getThumbnailByRecipeBoardId(recipeBoardId)
+                 .map(resource -> ResponseEntity.ok(resource))
+                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 }

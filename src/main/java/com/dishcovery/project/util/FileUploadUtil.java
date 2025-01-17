@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.text.DecimalFormat;
 import java.util.Calendar;
+import java.util.UUID;
 
 import org.apache.commons.io.FilenameUtils;
 import org.springframework.web.multipart.MultipartFile;
@@ -12,100 +13,102 @@ import lombok.extern.log4j.Log4j;
 
 @Log4j
 public class FileUploadUtil {
-    
+
     /**
-     * íŒŒì¼ ì´ë¦„ì—ì„œ í™•ì¥ìë¥¼ ì œì™¸í•œ ì‹¤ì œ íŒŒì¼ ì´ë¦„ì„ ì¶”ì¶œ
-     * 
-     * @param fileName íŒŒì¼ ì´ë¦„
-     * @return ì‹¤ì œ íŒŒì¼ ì´ë¦„
+     * ÆÄÀÏ ÀÌ¸§¿¡¼­ È®ÀåÀÚ¸¦ Á¦¿ÜÇÑ ½ÇÁ¦ ÆÄÀÏ ÀÌ¸§À» ÃßÃâ
+     *
+     * @param fileName ÆÄÀÏ ÀÌ¸§
+     * @return ½ÇÁ¦ ÆÄÀÏ ÀÌ¸§
      */
     public static String subStrName(String fileName) {
-    	// FilenameUtils.normalize() : íŒŒì¼ ì´ë¦„ ì •ê·œí™” ë©”ì„œë“œ
+        // FilenameUtils.normalize() : ÆÄÀÏ ÀÌ¸§ Á¤±ÔÈ­ ¸Ş¼­µå
         String normalizeName = FilenameUtils.normalize(fileName);
         int dotIndex = normalizeName.lastIndexOf('.');
 
         String realName = normalizeName.substring(0, dotIndex);
         return realName;
     }
-    
+
     /**
-     * íŒŒì¼ ì´ë¦„ì—ì„œ í™•ì¥ìë¥¼ ì¶”ì¶œ
-     * 
-     * @param fileName íŒŒì¼ ì´ë¦„
-     * @return í™•ì¥ì
+     * ÆÄÀÏ ÀÌ¸§¿¡¼­ È®ÀåÀÚ¸¦ ÃßÃâ
+     *
+     * @param fileName ÆÄÀÏ ÀÌ¸§
+     * @return È®ÀåÀÚ
      */
     public static String subStrExtension(String fileName) {
-        // íŒŒì¼ ì´ë¦„ì—ì„œ ë§ˆì§€ë§‰ '.'ì˜ ì¸ë±ìŠ¤ë¥¼ ì°¾ìŠµë‹ˆë‹¤.
+        // ÆÄÀÏ ÀÌ¸§¿¡¼­ ¸¶Áö¸· '.'ÀÇ ÀÎµ¦½º¸¦ Ã£½À´Ï´Ù.
         int dotIndex = fileName.lastIndexOf('.');
 
-        // '.' ì´í›„ì˜ ë¬¸ìì—´ì„ í™•ì¥ìë¡œ ì¶”ì¶œí•©ë‹ˆë‹¤.
+        // '.' ÀÌÈÄÀÇ ¹®ÀÚ¿­À» È®ÀåÀÚ·Î ÃßÃâÇÕ´Ï´Ù.
         String extension = fileName.substring(dotIndex + 1);
 
         return extension;
     }
-    
+
     /**
-     * íŒŒì¼ì´ ì €ì¥ë˜ëŠ” í´ë” ì´ë¦„ì„ ë‚ ì§œ í˜•ì‹(yyyy/MM/dd)ìœ¼ë¡œ ìƒì„±
-     * 
-     * @return ë‚ ì§œ í˜•ì‹ì˜ í´ë” ì´ë¦„
+     * ÆÄÀÏÀÌ ÀúÀåµÇ´Â Æú´õ ÀÌ¸§À» ³¯Â¥ Çü½Ä(yyyy/MM/dd)À¸·Î »ı¼º
+     *
+     * @return ³¯Â¥ Çü½ÄÀÇ Æú´õ ÀÌ¸§
      */
     public static String makeDatePath() {
         Calendar calendar = Calendar.getInstance();
-        
+
         String yearPath = String.valueOf(calendar.get(Calendar.YEAR));
         log.info("yearPath: " + yearPath);
-        
+
         String monthPath = yearPath
                 + File.separator
                 + new DecimalFormat("00")
-                    .format(calendar.get(Calendar.MONTH) + 1);
+                .format(calendar.get(Calendar.MONTH) + 1);
         log.info("monthPath: " + monthPath);
-        
-        
+
+
         String datePath = monthPath
                 + File.separator
                 + new DecimalFormat("00")
-                    .format(calendar.get(Calendar.DATE));
+                .format(calendar.get(Calendar.DATE));
         log.info("datePath: " + datePath);
-        
+
         return datePath;
     }
-    
+
     /**
-     * íŒŒì¼ì„ ì €ì¥
-     * 
-     * @param uploadPath íŒŒì¼ ì—…ë¡œë“œ ê²½ë¡œ
-     * @param file ì—…ë¡œë“œëœ íŒŒì¼
-     * @param uuid UUID
+     * ÆÄÀÏÀ» ÀúÀå
+     *
+     * @param uploadPath ÆÄÀÏ ¾÷·Îµå °æ·Î
+     * @param file       ¾÷·ÎµåµÈ ÆÄÀÏ
+     * @param uuid       ÀúÀåÇÒ ÆÄÀÏ ÀÌ¸§
      */
-    public static void saveFile(String uploadPath, MultipartFile file, String uuid) {
-        
-        File realUploadPath = new File(uploadPath, makeDatePath());
+    public static String saveFile(String uploadPath, MultipartFile file, String uuid) {
+
+        String datePath = makeDatePath();
+        File realUploadPath = new File(uploadPath, datePath);
+
         if (!realUploadPath.exists()) {
             realUploadPath.mkdirs();
             log.info(realUploadPath.getPath() + " successfully created.");
         } else {
             log.info(realUploadPath.getPath() + " already exists.");
         }
-        
-        File saveFile = new File(realUploadPath, uuid);
+
+         File saveFile = new File(realUploadPath, uuid);
         try {
             file.transferTo(saveFile);
-            log.info("file upload scuccess");
+            log.info("file upload success: " + saveFile.getAbsolutePath());
         } catch (IllegalStateException e) {
             log.error(e.getMessage());
         } catch (IOException e) {
             log.error(e.getMessage());
-        } 
-        
+        }
+
+       return datePath + "/" + uuid;
     }
-    
+
     /**
-     * íŒŒì¼ì„ ì‚­ì œ
-     * 
-     * @param uploadPath íŒŒì¼ ì—…ë¡œë“œ ê²½ë¡œ
-     * @param path íŒŒì¼ì´ ì €ì¥ëœ ë‚ ì§œ ê²½ë¡œ
-     * @param chgName ì €ì¥ëœ íŒŒì¼ ì´ë¦„
+     * ÆÄÀÏÀ» »èÁ¦
+     *
+     * @param uploadPath   ÆÄÀÏ ¾÷·Îµå °æ·Î
+     * @param thumbnailPath ÆÄÀÏÀÌ ÀúÀåµÈ ³¯Â¥ °æ·Î¿Í ÆÄÀÏ ÀÌ¸§
      */
     public static void deleteFile(String uploadPath, String thumbnailPath) {
         if (thumbnailPath == null || thumbnailPath.isEmpty()) {
@@ -113,9 +116,8 @@ public class FileUploadUtil {
             return;
         }
 
-        // ê²½ë¡œ ìƒì„±
-        String fullPath = uploadPath + "/" + thumbnailPath.replace("\\", "/");
 
+        String fullPath = uploadPath + "/" + thumbnailPath.replace("\\", "/");
         File file = new File(fullPath);
 
         if (file.exists()) {
@@ -128,5 +130,40 @@ public class FileUploadUtil {
             System.out.println(fullPath + " file not found.");
         }
     }
-    
+
+    /**
+     * ÆÄÀÏÀ» ÀúÀå (ÆÄÀÏ ÀÌ¸§ ÀÚµ¿ »ı¼º)
+     *
+     * @param uploadPath ÆÄÀÏ ¾÷·Îµå °æ·Î
+     * @param file       ¾÷·ÎµåµÈ ÆÄÀÏ
+     */
+    public static String saveFile(String uploadPath, MultipartFile file) {
+        String uuid = UUID.randomUUID().toString();
+        String extension = subStrExtension(file.getOriginalFilename());
+        String savedFileName = uuid + "." + extension;
+
+        String datePath = makeDatePath().replace("\\", "/");
+        File realUploadPath = new File(uploadPath, datePath);
+
+        if (!realUploadPath.exists()) {
+            realUploadPath.mkdirs();
+            log.info(realUploadPath.getPath() + " successfully created.");
+        } else {
+            log.info(realUploadPath.getPath() + " already exists.");
+        }
+
+       File saveFile = new File(realUploadPath, savedFileName);
+        try {
+            file.transferTo(saveFile);
+            log.info("file upload success: " + saveFile.getAbsolutePath());
+         } catch (IllegalStateException e) {
+            log.error(e.getMessage());
+        } catch (IOException e) {
+            log.error(e.getMessage());
+         }
+          return datePath + "/" + savedFileName;
+
+    }
+
+	
 }
