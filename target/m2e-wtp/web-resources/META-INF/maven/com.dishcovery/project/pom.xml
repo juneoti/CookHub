@@ -164,7 +164,15 @@
             <artifactId>ojdbc11</artifactId>
             <version>23.2.0.0</version>
         </dependency>
-
+	
+		<!-- Thumbnail 생성 라이브러리 -->
+		<!-- https://mvnrepository.com/artifact/net.coobird/thumbnailator -->
+		<dependency>
+			<groupId>net.coobird</groupId>
+			<artifactId>thumbnailator</artifactId>
+			<version>0.4.19</version>
+		</dependency>
+		
         <!-- Spring Security 모듈 -->
         <dependency>
             <groupId>org.springframework.security</groupId>

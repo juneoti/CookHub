@@ -18,5 +18,6 @@ public class RecipeReviewVO {
 	private String recipeReviewContent;
 	private int reviewRating;
 	private Date recipeReviewDateCreated;
+	private String imagePath;
 	
 }
