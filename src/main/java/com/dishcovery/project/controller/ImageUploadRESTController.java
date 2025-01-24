@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -26,20 +27,19 @@ import com.dishcovery.project.util.FileUploadUtil;
 import lombok.extern.log4j.Log4j;
 
 @RestController
-@RequestMapping(value = "/recipeboard")
+@RequestMapping(value = "/image")
 @Log4j
 public class ImageUploadRESTController {
 	
+	@Value("${file.upload.path}")
+	private String uploadPath;
 	
-//	@Autowired
-//	private String uploadPath;
-	
-	private final String uploadPath = "C:\\reviewuploads"; // 필드 초기화로 경로 직접 설정
+//	private final String uploadPath = "C:\\reviewuploads"; // 필드 초기화로 경로 직접 설정
 	
 	@Autowired
 	private ReviewAttachService reviewAttachService;
 	
-	@PostMapping("/detail/image")
+	@PostMapping
 	public ResponseEntity<ArrayList<ReviewAttachDTO>> createImage(MultipartFile[] files) {
 		log.info("createImage()");
 		
@@ -144,7 +144,7 @@ public class ImageUploadRESTController {
 	}
 	
 	// 섬네일 및 원본 이미지 삭제 기능
-	@PostMapping("/attach/{recipeReviewId}/{recipeBoardId}")
+	@PostMapping("/delete")
 	public ResponseEntity<Integer> deleteImage(String attachPath, String attachChgName, String attachExtension) {
 		log.info("deleteAttach()");
 		log.info(attachChgName);

@@ -1,6 +1,7 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8"
    pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
+<%@ taglib prefix="sec" uri="http://www.springframework.org/security/tags" %>
 <%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt"%>
 <!DOCTYPE html>
 <html>
@@ -9,6 +10,14 @@
 <base href="${pageContext.request.contextPath}/">
 <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
 <meta charset="UTF-8">
+
+<!-- css 파일 불러오기 -->
+<link rel="stylesheet"
+	href="${pageContext.request.contextPath }/resources/css/image.css">
+<!--  
+<meta name="_csrf" content="${_csrf.token}" />
+<meta name="_csrf_header" content="${_csrf.headerName}" />
+-->
 <title>${recipeBoard.recipeBoardTitle }</title>
 
 <style>
@@ -134,24 +143,42 @@
         }); // end document
     </script>
 
+
+	<!-- isAnonymous(): 인증되지 않은(로그인하지 않은) 사용자만 접근을 허용 -->
    <input type="hidden" id="recipeBoardId"
       value="${recipeBoard.recipeBoardId }">
 
-   <div style="text-align: center;">
-      <input type="text" id="memberId"> <input type="text"
-         id="replyContent">
+	<h2>댓글</h2>
+	<sec:authorize access="isAnonymous()">
+		*댓글을 작성하려면 로그인해 주세요.
+	</sec:authorize>	
+
+	<!-- isAuthenticated(): 인증된(로그인한) 사용자라면 누구나 접근을 허용 -->
+	<sec:authorize access="isAuthenticated()">	
+   <div style="text-align: left;">
+      <input type="hidden" id="memberId" value="${user.username }"> 
+      <input type="text" id="replyContent" maxlength="150">
       <button id="btnAdd">댓글 작성</button>
    </div>
-
-   <hr>
-   <div style="text-align: center;">
+	</sec:authorize>
+		
+   <hr> 
+   <div style="text-align: left;">
       <div id="replies"></div>
    </div>
 
    <hr>
-   <div style="text-align: center;">
-      <input type="text" id="reviewMemberId"><input type="text"
-         id="recipeReviewContent"> <span class="star-rating"> <input
+   
+   	<h2>리뷰</h2>
+   	<sec:authorize access="isAnonymous()">
+		*리뷰를 작성하려면 로그인해 주세요.
+	</sec:authorize>	
+   
+   <sec:authorize access="isAuthenticated()">	
+   <div style="text-align: left;">
+      <input type="hidden" id="reviewMemberId" value="${user.username }">
+      <input type="text" id="recipeReviewContent">
+      <span class="star-rating"> <input
          type="radio" name="reviewRating" id="star1" value="1"><label
          for="star1"></label> <input type="radio" name="reviewRating"
          id="star2" value="2"><label for="star2"></label> <input
@@ -161,22 +188,42 @@
          type="radio" name="reviewRating" id="star5" value="5"><label
          for="star5"></label>
       </span>
+      
+      <div class="image-upload">
+		<div class="image-drop"></div>
+	</div>
+
+		<div class="reviewAttachDTOImg-list">
+	</div>
+	
+	<div class="reviewAttachDTOFile-list">
+	</div>
+      
       <button id="btnReviewAdd">리뷰 작성</button>
+      
+      <script src="${pageContext.request.contextPath }/resources/js/image.js"></script>
    </div>
+   </sec:authorize>
+   
    <hr>
-   <div style="text-align: center;">
+   <div style="text-align: left;">
       <div id="reviews"></div>
    </div>
-
+  
    <script type="text/javascript">
-      $(document)
-            .ready(
-                  function() {
+   
+//  $(document).ajaxSend(function(e, xhr, opt){
+//		var token = $("meta[name='_csrf']").attr("content");
+//		var header = $("meta[name='_csrf_header']").attr("content");
+		
+//		xhr.setRequestHeader(header, token);
+//	});
+	
+	$(document).ready(function(){
+    	  
                      getAllReply(); // reply 함수 호출
                      getAllRecipeReview(); // review 함수 호출
-                  
-                     
-                 
+                             
                      $('#btnAdd').click(function() {
                         var recipeBoardId = $('#recipeBoardId').val(); // 게시판 번호 데이터
                         var memberId = $('#memberId').val(); // 작성자 데이터
@@ -187,16 +234,16 @@
                            'memberId' : memberId,
                            'replyContent' : replyContent
                         }
-                        console.log(obj);
+                        // memberId 데이터 타입 문제일 수 있음
 
                         // $.ajax로 송수신
                         $.ajax({
                            type : 'POST', // 메서드 타입
                            url : '/project/recipeboard/replies/detail', // url
                            headers : {// 헤더 정보
-                              'Content-Type' : 'application/json' // json content-type 설정   
+                             'Content-Type' : 'application/json' // json content-type 설정 
                            },
-                           data : JSON.stringify(obj), // JSON으로 변환
+                      	   data : JSON.stringify(obj), // JSON으로 변환 
                            success : function(result) { // 전송 성공 시 서버에서 result값 전송
                               console.log(result);
                               if (result == 1) {
@@ -205,7 +252,13 @@
                               } else {
                                  alert('댓글 입력 실패');
                               }
+                           },
+                           error: function(xhr, status, error){ 
+                        
+                           console.error("AJAX 에러 발생:", status, error);
+                           alert('댓글 입력 중 오류가 발생했습니다.');
                            }
+                           
                         });
                      }); // end btn Add.click()
                      
@@ -228,23 +281,89 @@
                                'memberId': memberId,
                                'recipeReviewContent': recipeReviewContent,
                                'reviewRating': reviewRating
+                               
+                               
                            };
+                           
+                           var registerForm = $('#registerForm');
+                           var i = 0;
+                           $('.reviewAttachDTOImg-list input[name="reviewAttachDTO"]').each(function(){
+                        	try{   
+                        	   console.log(this); // JSON reviewAttachDTO 데이터를 object 변경
+                           
+                        	   var reviewAttachDTO = JSON.parse($(this).val());
+                        	   var inputPath = $('<input>').attr('type', 'hidden')
+                               .attr('name', 'attachList[' + i + '].attachPath');
+                               inputPath.val(reviewAttachDTO.attachPath);
+                           	   // attachRealName input 생성
+                               var inputRealName = $('<input>').attr('type', 'hidden')
+                                   .attr('name', 'attachList[' + i + '].attachRealName');
+                               inputRealName.val(reviewAttachDTO.attachRealName);
+                               // attachChgName input 생성
+                               var inputChgName = $('<input>').attr('type', 'hidden')
+                                   .attr('name', 'attachList[' + i + '].attachChgName');
+                               
+                               inputChgName.val(reviewAttachDTO.attachChgName);
+                               
+                               var inputExtension = $('<input>').attr('type', 'hidden')
+                               .attr('name', 'attachList[' + i + '].attachExtension');
+                               
+                               inputExtension.val(reviewAttachDTO.attachExtension);
+                               
+                               // form에 태그 추가
+                               registerForm.append(inputPath);
+                               registerForm.append(inputRealName);
+                               registerForm.append(inputChgName);
+                               registerForm.append(inputExtension);
+
+                               i++;
+                        	} catch (e) {
+                        		console.error("JSON 파싱 오류:", e);
+                        	}
+                        	
+                           });
+                  		   // FormData 객체 생성
+                     	   var formData = new FormData(registerForm[0]);
+                  		   
+                     	  // 리뷰 데이터를 FormData에 추가
+                     	    formData.append('recipeBoardId', recipeBoardId);
+                     	    formData.append('memberId', memberId);
+                     	    formData.append('recipeReviewContent', recipeReviewContent);
+                     	    formData.append('reviewRating', reviewRating);
+                     	    
+                     	// 파일 데이터를 formData에 추가
+                     	    var imageInput = document.getElementById('imageInput');
+                     	    if (imageInput.files && imageInput.files.length > 0) {
+                     	      for (var j = 0; j < imageInput.files.length; j++) {
+                     	        formData.append('images', imageInput.files[j]);
+                     	       }
+                     	    }
 
                            console.log("전송 데이터:", obj);
 
                            $.ajax({
                                type: 'POST',
                                url: '/project/recipeboard/reviews/detail',
-                               headers: { 'Content-Type': 'application/json' },
-                               data: JSON.stringify(obj),
+                    //         headers: { 'Content-Type': 'application/json' },
+
+                               data: formData, //FormData 객체를 전송 
+                               
+                               contentType : false,
+                               
+                               processData : false,
+                               
                                success: function(result) {
                                    console.log(result);
                                    if (result == 1) {
                                        alert('리뷰 입력 성공');
-                                       getAllRecipeReview();
+                          //           getAllRecipeReview();
                                    } else {
                                        alert('리뷰 입력 실패');
                                    }
+                               },
+                               error: function(xhr, status, error){
+                                   console.error("AJAX 에러 발생:", status, error);
+                                  alert('리뷰 입력 중 오류가 발생했습니다.');
                                }
                            });
                        });
@@ -302,11 +421,12 @@
                                   $.ajax({
                                        url: '/project/recipeboard/replies/' + replyId,
                                          type: 'PUT',
-                                         contentType: 'application/json',
+                                         dataType: "json",
+                                         ContentType: 'application/json',
                                          data: JSON.stringify({
                                              replyId: replyId,
                                              replyContent: updatedReplyContent
-                                         }),
+                                         }),                                                          										 	
                                            success: function(result) {
                                              console.log(result);
                                              if (result == 1) {
@@ -343,12 +463,13 @@
                                     $
                                           .ajax({
                                              type : 'DELETE',
+                                             dataType: "json",
                                              url : '/project/recipeboard/replies/'
                                                    + replyId
                                                    + '/'
                                                    + recipeBoardId,
                                              headers : {
-                                                'content-Type' : 'application/json'
+                                                'Content-Type' : 'application/json'
                                              },
                                              success : function(
                                                    result) {
@@ -440,6 +561,7 @@
                                                 $
                                                       .ajax({
                                                          type : 'PUT',
+                                                         dataType: "json",
                                                          url : '/project/recipeboard/reviews/'
                                                                + recipeReviewId,
                                                          headers : {
@@ -474,6 +596,7 @@
                                                 $
                                                       .ajax({
                                                          type : 'DELETE',
+                                                         dataType: "json",
                                                          url : '/project/recipeboard/reviews/'
                                                                + recipeReviewId
                                                                + '/'
@@ -486,7 +609,7 @@
                                                             console
                                                                   .log(result);
                                                             if (result == 1) {
-                                                               alert('리뷰 삭제 성g공!');
+                                                               alert('리뷰 삭제 성공!');
                                                                getAllRecipeReview();
                                                             }
                                                          }

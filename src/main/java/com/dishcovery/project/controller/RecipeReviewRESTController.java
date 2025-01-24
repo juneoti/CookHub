@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -26,7 +27,8 @@ public class RecipeReviewRESTController {
 	
 	@Autowired
 	private RecipeReviewService recipeReviewService;
-
+	
+	@PreAuthorize("hasRole('ROLE_MEMBER')")
 	@PostMapping("/reviews/detail")
 	public ResponseEntity<Integer> createRecipeReview(@RequestBody RecipeReviewDTO recipeReviewDTO) {
 		log.info("createRecipeReview()");
@@ -37,7 +39,8 @@ public class RecipeReviewRESTController {
 		return new ResponseEntity<Integer>(result, HttpStatus.OK);
 		
 	}
-
+	
+	
 	@GetMapping("/allReviews/{recipeBoardId}")
 	public ResponseEntity<List<RecipeReviewDTO>> readAllRecipeReview(
 			@PathVariable("recipeBoardId") int recipeBoardId) {
@@ -48,7 +51,10 @@ public class RecipeReviewRESTController {
 
 		return new ResponseEntity<List<RecipeReviewDTO>>(list, HttpStatus.OK);
 	}
-
+	
+//	@PreAuthorize("principal.username == #recipeReviewDTO.memberId")
+	
+	@PreAuthorize("hasRole('ROLE_MEMBER')")
 	@PutMapping("/reviews/{recipeReviewId}")
 	public ResponseEntity<Integer> updateRecipeReview(
 			@PathVariable("recipeReviewId") int recipeReviewId,
@@ -59,7 +65,10 @@ public class RecipeReviewRESTController {
 		int result = recipeReviewService.updateRecipeReview(recipeReviewDTO);
 		return new ResponseEntity<Integer>(result, HttpStatus.OK);
 	}
-
+	
+//	@PreAuthorize("principal.username == #memberId")
+	
+	@PreAuthorize("hasRole('ROLE_MEMBER')")
 	@DeleteMapping("/reviews/{recipeReviewId}/{recipeBoardId}")
 	public ResponseEntity<Integer> deleteRecipeReview(
 			@PathVariable("recipeReviewId") int recipeReviewId,

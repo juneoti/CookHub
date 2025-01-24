@@ -13,6 +13,7 @@ public class CustomUser extends User {
 
     private MemberVO memberVO;
     private String name;
+    
 
     public CustomUser(MemberVO memberVO, Collection<? extends GrantedAuthority> authorities) {
         // Collection<? extends GrantedAuthority> authorities :
@@ -24,6 +25,10 @@ public class CustomUser extends User {
 
         // 전송된 member 객체 적용
         this.memberVO = memberVO;
-        this.name = memberVO.getName();
+        this.name = memberVO.getName();        
+    }
+    
+    public int getMemberId() {
+    	return memberVO.getMemberId();
     }
 }
