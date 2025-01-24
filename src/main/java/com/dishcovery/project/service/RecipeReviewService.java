@@ -8,6 +8,7 @@ public interface RecipeReviewService {
 	
 	int createRecipeReview(RecipeReviewDTO recipeReviewDTO);
 	List<RecipeReviewDTO> getAllRecipeReview(int recipeBoardId);
+//	RecipeReviewDTO get
 	int updateRecipeReview(RecipeReviewDTO recipeReviewDTO);
 	int deleteRecipeReview(int recipeReviewId, int recipeBoardId);    
     

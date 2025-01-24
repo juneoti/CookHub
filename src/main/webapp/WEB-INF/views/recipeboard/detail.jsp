@@ -191,13 +191,13 @@
       
       <div class="image-upload">
 		<div class="image-drop"></div>
-	</div>
+	  </div>
 
 		<div class="reviewAttachDTOImg-list">
-	</div>
+	  </div>
 	
-	<div class="reviewAttachDTOFile-list">
-	</div>
+	  <div class="reviewAttachDTOFile-list">
+	  </div>
       
       <button id="btnReviewAdd">리뷰 작성</button>
       
@@ -285,85 +285,21 @@
                                
                            };
                            
-                           var registerForm = $('#registerForm');
-                           var i = 0;
-                           $('.reviewAttachDTOImg-list input[name="reviewAttachDTO"]').each(function(){
-                        	try{   
-                        	   console.log(this); // JSON reviewAttachDTO 데이터를 object 변경
-                           
-                        	   var reviewAttachDTO = JSON.parse($(this).val());
-                        	   var inputPath = $('<input>').attr('type', 'hidden')
-                               .attr('name', 'attachList[' + i + '].attachPath');
-                               inputPath.val(reviewAttachDTO.attachPath);
-                           	   // attachRealName input 생성
-                               var inputRealName = $('<input>').attr('type', 'hidden')
-                                   .attr('name', 'attachList[' + i + '].attachRealName');
-                               inputRealName.val(reviewAttachDTO.attachRealName);
-                               // attachChgName input 생성
-                               var inputChgName = $('<input>').attr('type', 'hidden')
-                                   .attr('name', 'attachList[' + i + '].attachChgName');
-                               
-                               inputChgName.val(reviewAttachDTO.attachChgName);
-                               
-                               var inputExtension = $('<input>').attr('type', 'hidden')
-                               .attr('name', 'attachList[' + i + '].attachExtension');
-                               
-                               inputExtension.val(reviewAttachDTO.attachExtension);
-                               
-                               // form에 태그 추가
-                               registerForm.append(inputPath);
-                               registerForm.append(inputRealName);
-                               registerForm.append(inputChgName);
-                               registerForm.append(inputExtension);
-
-                               i++;
-                        	} catch (e) {
-                        		console.error("JSON 파싱 오류:", e);
-                        	}
-                        	
-                           });
-                  		   // FormData 객체 생성
-                     	   var formData = new FormData(registerForm[0]);
-                  		   
-                     	  // 리뷰 데이터를 FormData에 추가
-                     	    formData.append('recipeBoardId', recipeBoardId);
-                     	    formData.append('memberId', memberId);
-                     	    formData.append('recipeReviewContent', recipeReviewContent);
-                     	    formData.append('reviewRating', reviewRating);
-                     	    
-                     	// 파일 데이터를 formData에 추가
-                     	    var imageInput = document.getElementById('imageInput');
-                     	    if (imageInput.files && imageInput.files.length > 0) {
-                     	      for (var j = 0; j < imageInput.files.length; j++) {
-                     	        formData.append('images', imageInput.files[j]);
-                     	       }
-                     	    }
-
                            console.log("전송 데이터:", obj);
 
                            $.ajax({
                                type: 'POST',
                                url: '/project/recipeboard/reviews/detail',
-                    //         headers: { 'Content-Type': 'application/json' },
-
-                               data: formData, //FormData 객체를 전송 
-                               
-                               contentType : false,
-                               
-                               processData : false,
-                               
+                               headers: { 'Content-Type': 'application/json' },
+                               data: JSON.stringify(obj),
                                success: function(result) {
                                    console.log(result);
                                    if (result == 1) {
                                        alert('리뷰 입력 성공');
-                          //           getAllRecipeReview();
+                                       getAllRecipeReview();
                                    } else {
                                        alert('리뷰 입력 실패');
                                    }
-                               },
-                               error: function(xhr, status, error){
-                                   console.error("AJAX 에러 발생:", status, error);
-                                  alert('리뷰 입력 중 오류가 발생했습니다.');
                                }
                            });
                        });

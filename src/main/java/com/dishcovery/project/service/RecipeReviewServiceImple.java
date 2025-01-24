@@ -37,9 +37,6 @@ public class RecipeReviewServiceImple implements RecipeReviewService{
 	@Autowired
 	private ReviewAttachMapper reviewAttachMapper;
 	
-	@Autowired
-	private RecipeBoardMapper recipeBoardMapper;
-	
 	@Transactional(value = "transactionManager")	
 	@Override
 	public int createRecipeReview(RecipeReviewDTO recipeReviewDTO) {
