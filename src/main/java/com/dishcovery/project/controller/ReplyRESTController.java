@@ -7,7 +7,6 @@ import lombok.extern.log4j.Log4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -19,8 +18,6 @@ public class ReplyRESTController {
 	@Autowired
 	private ReplyService replyService;
 	
-//	@PreAuthorize("#customUser.memberVO.memberId == #reply.memberId")
-	@PreAuthorize("hasRole('ROLE_MEMBER')")
 	@PostMapping("/replies/detail")
 	public ResponseEntity<Integer> createReply(@RequestBody ReplyVO replyVO){
 		log.info("createReply()");
@@ -46,8 +43,6 @@ public class ReplyRESTController {
 		return new ResponseEntity<List<ReplyVO>>(list, HttpStatus.OK);
 	}
 	
-	
-//	@PreAuthorize("#customUser.memberVO.memberId == #reply.memberId")
 	@PutMapping("replies/{replyId}") // PUT : 댓글 수정
 	 public ResponseEntity<Integer> updateReply(
 		        @PathVariable("replyId") int replyId,
@@ -59,8 +54,6 @@ public class ReplyRESTController {
 		return new ResponseEntity<Integer>(result, HttpStatus.OK);
 	}
 	
-	
-//	@PreAuthorize("#customUser.memberVO.memberId == #reply.memberId")
 	@DeleteMapping("replies/{replyId}/{recipeBoardId}") // DELETE : 댓글 삭제
 	 public ResponseEntity<Integer> deleteReply(
 			 @PathVariable("replyId") int replyId,
