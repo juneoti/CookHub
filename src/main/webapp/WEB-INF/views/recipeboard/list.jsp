@@ -1,7 +1,6 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
-<%@ taglib uri="http://www.springframework.org/security/tags" prefix="sec" %>
 
 <!DOCTYPE html>
 <html>
@@ -15,13 +14,6 @@
             font-family: Arial, sans-serif;
         }
 
-		.no-results {
-		    text-align: center;
-		    margin-top: 50px;
-		    font-size: 18px;
-		    color: #555;
-		}
-		
         .filters-container {
             display: flex;
             flex-direction: column;
@@ -153,10 +145,55 @@
         .register-button:hover {
             background-color: #45a049;
         }
+        
+        .search-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .search-input {
+            width: 60%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        .search-button {
+            padding: 10px 20px;
+            margin-left: 10px;
+            font-size: 16px;
+            background-color: #4caf50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .search-button:hover {
+            background-color: #45a049;
+        }
     </style>
 </head>
 <body>
     <h1>Recipe Board</h1>
+
+
+	<!-- 검색창 및 버튼 -->
+    <div class="search-container">
+        <form method="GET" action="" id="searchForm">
+            <input 
+                type="text" 
+                name="hashtag" 
+                value="${param.hashtag}" 
+                placeholder="Enter hashtags to search..." 
+                class="search-input">
+            <input type="hidden" name="pageNum" value="1"> 
+            <button type="submit" class="search-button">Search</button>
+        </form>
+    </div>
     
     <!-- Filters Section -->
     <div class="filters-container">
@@ -201,32 +238,23 @@
             </c:forEach>
         </div>
     </div>
-	
-	<!-- Recipe List Section -->
-	<div class="recipe-list">
-	    <c:choose>
-	        <c:when test="${not empty recipeList}">
-	            <c:forEach var="recipe" items="${recipeList}">
-	                <div class="recipe-card" onclick="location.href='${pageContext.request.contextPath}/recipeboard/detail/${recipe.recipeBoardId}'">
-	                    <img class="recipe-thumbnail" src="${pageContext.request.contextPath}/uploads/${recipe.thumbnailPath}" alt="Thumbnail">
-	                    <div class="recipe-info">
-	                        <h3 class="recipe-title">${recipe.recipeBoardTitle}</h3>
-	                        <p class="recipe-meta">
-	                            조회수: ${recipe.viewCount} | 평점: ${recipe.avgRating}
-	                        </p>
-	                    </div>
-	                </div>
-	            </c:forEach>
-	        </c:when>
-	        <c:otherwise>
-	            <div class="no-results">
-				    <h3>검색 결과가 없습니다</h3>
-				    <p>- 일반적인 검색어로 다시 검색해 보세요</p>
-				    <p>- 검색어의 단어 수를 줄이거나, 다른 검색어로 검색해 보세요.</p>
-				</div>
-	        </c:otherwise>
-	    </c:choose>
-	</div>
+
+ <!-- 등록 버튼 -->
+    <a href="${pageContext.request.contextPath}/recipeboard/register" class="register-button">등록</a>
+    <!-- Recipe List Section -->
+    <div class="recipe-list">
+        <c:forEach var="recipe" items="${recipeList}">
+            <div class="recipe-card" onclick="location.href='${pageContext.request.contextPath}/recipeboard/detail/${recipe.recipeBoardId}'">
+                <img class="recipe-thumbnail" src="${pageContext.request.contextPath}/uploads/${recipe.thumbnailPath}" alt="Thumbnail">
+                <div class="recipe-info">
+                    <h3 class="recipe-title">${recipe.recipeBoardTitle}</h3>
+                    <p class="recipe-meta">
+                        조회수: ${recipe.viewCount} | 평점: ${recipe.avgRating}
+                    </p>
+                </div>
+            </div>
+        </c:forEach>
+    </div>
 
     <!-- Pagination Section -->
 	<div class="pagination-container">
@@ -251,12 +279,7 @@
 	</div>
 
     <script>
-	    function redirectToLogin() {
-	        alert("로그인이 필요한 서비스입니다.");
-	        window.location.href = "${pageContext.request.contextPath}/auth/login";
-	    }    
-	    
-    	function applyFilter(key, value) {
+        function applyFilter(key, value) {
             const urlParams = new URLSearchParams(window.location.search);
             urlParams.set(key, value);
             urlParams.set("pageNum", "1");

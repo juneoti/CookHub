@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import com.dishcovery.project.domain.NoticeBoardVO;
 import com.dishcovery.project.service.NoticeBoardService;
@@ -21,59 +22,50 @@ import lombok.extern.log4j.Log4j;
 @Log4j
 public class NoticeBoardController {
 
-    @Autowired
+    @Autowired 
     private NoticeBoardService noticeBoardService;
 
-    // 모든 공지사항을 조회하는 메서드
     @GetMapping("/list")
     public String getAllNoticeBoards(Model model) {
-    	log.info("getAllNoticeBoards()");
+        log.info("getAllNoticeBoards()");
         List<NoticeBoardVO> noticeBoardList = noticeBoardService.getAllNoticeBoards();
         model.addAttribute("noticeBoardList", noticeBoardList);
-        return "noticeboard/list";  
-    }
+        return "noticeboard/list"; }
 
-    // 특정 공지사항을 조회하는 메서드
-    @GetMapping("/view")
+    @GetMapping("/view/{noticeBoardId}")
     public String getNoticeBoardById(@PathVariable("noticeBoardId") int noticeBoardId, Model model) {
         NoticeBoardVO noticeBoard = noticeBoardService.getNoticeBoardById(noticeBoardId);
-        model.addAttribute("noticeBoard", noticeBoard);
-        return "noticeboard/view";  
+        model.addAttribute("noticeBoardVO", noticeBoard);
+        return "noticeboard/detail"; 
     }
 
-    // 공지사항 등록 폼을 보여주는 메서드
     @GetMapping("/register")
-    public String showAddNoticeForm() {
-        return "noticeboard/add";  
+    public String showAddNoticeForm(Model model) {
+        return "noticeboard/add"; 
     }
 
-    // 새로운 공지사항을 등록하는 메서드
     @PostMapping("/register")
     public String addNoticeBoard(@ModelAttribute NoticeBoardVO noticeBoard) {
         noticeBoardService.addNoticeBoard(noticeBoard);
-        return "redirect:/noticeboard/list";  
+        return "redirect:/noticeboard/list";
     }
 
-    // 공지사항 수정 폼을 보여주는 메서드
-    @GetMapping("/modify")
+    @GetMapping("/modify/{noticeBoardId}")
     public String showEditNoticeForm(@PathVariable("noticeBoardId") int noticeBoardId, Model model) {
         NoticeBoardVO noticeBoard = noticeBoardService.getNoticeBoardById(noticeBoardId);
-        model.addAttribute("noticeBoard", noticeBoard);
-        return "noticeboard/edit";  
+        model.addAttribute("noticeBoardVO", noticeBoard);
+        return "noticeboard/modify"; 
     }
 
-    // 공지사항을 수정하는 메서드
     @PostMapping("/modify")
     public String updateNoticeBoard(@ModelAttribute NoticeBoardVO noticeBoard) {
         noticeBoardService.updateNoticeBoard(noticeBoard);
-        return "redirect:/noticeboard/list";  
+        return "redirect:/noticeboard/list";
     }
 
-    // 공지사항을 삭제하는 메서드
-    @PostMapping("/delete")
-    public String deleteNoticeBoard(@PathVariable("noticeBoardId") int noticeBoardId) {
+    @PostMapping("/delete/{noticeBoardId}")
+    public String deleteNoticeBoard(@PathVariable int noticeBoardId) {
         noticeBoardService.deleteNoticeBoard(noticeBoardId);
-        return "redirect:/noticeboard/list";  
+        return "redirect:/noticeboard/list";
     }
-
 }

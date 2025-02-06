@@ -1,25 +1,23 @@
 package com.dishcovery.project.persistence;
 
-import com.dishcovery.project.domain.NoticeBoardVO;
-import org.apache.ibatis.annotations.Mapper;
-
 import java.util.List;
 
-@Mapper
+import com.dishcovery.project.domain.NoticeBoardVO;
+
 public interface NoticeBoardMapper {
 
-    // ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½È¸ï¿½Ï´ï¿½ ï¿½Þ¼ï¿½ï¿½ï¿½
+    // ¸ðµç °øÁö»çÇ×À» Á¶È¸ÇÏ´Â ¸Þ¼­µå
     List<NoticeBoardVO> selectAllNoticeBoards();
 
-    // Æ¯ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½È¸ï¿½Ï´ï¿½ ï¿½Þ¼ï¿½ï¿½ï¿½
+    // Æ¯Á¤ °øÁö»çÇ×À» Á¶È¸ÇÏ´Â ¸Þ¼­µå
     NoticeBoardVO selectNoticeBoardById(int noticeBoardId);
 
-    // ï¿½ï¿½ï¿½Î¿ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½Ï´ï¿½ ï¿½Þ¼ï¿½ï¿½ï¿½
+    // »õ·Î¿î °øÁö»çÇ×À» µî·ÏÇÏ´Â ¸Þ¼­µå
     void insertNoticeBoard(NoticeBoardVO noticeBoard);
 
-    // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ï´ï¿½ ï¿½Þ¼ï¿½ï¿½ï¿½
+    // ±âÁ¸ °øÁö»çÇ×À» ¼öÁ¤ÇÏ´Â ¸Þ¼­µå
     void updateNoticeBoard(NoticeBoardVO noticeBoard);
 
-    // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ï´ï¿½ ï¿½Þ¼ï¿½ï¿½ï¿½
+    // °øÁö»çÇ×À» »èÁ¦ÇÏ´Â ¸Þ¼­µå
     void deleteNoticeBoard(int noticeBoardId);
 }

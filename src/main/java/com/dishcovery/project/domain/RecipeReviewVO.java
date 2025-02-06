@@ -1,7 +1,6 @@
 package com.dishcovery.project.domain;
 
 import java.util.Date;
-import java.util.List;
 
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -19,7 +18,5 @@ public class RecipeReviewVO {
 	private String recipeReviewContent;
 	private int reviewRating;
 	private Date recipeReviewDateCreated;
-	
-	private List<ReviewAttachVO> reviewAttachList;
 	
 }

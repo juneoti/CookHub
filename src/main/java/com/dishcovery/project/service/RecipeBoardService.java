@@ -11,8 +11,10 @@ import org.springframework.web.multipart.MultipartFile;
 import com.dishcovery.project.domain.HashtagsVO;
 import com.dishcovery.project.domain.IngredientsVO;
 import com.dishcovery.project.domain.MethodsVO;
+import com.dishcovery.project.domain.RecipeBoardStepVO;
 import com.dishcovery.project.domain.RecipeBoardVO;
 import com.dishcovery.project.domain.RecipeDetailVO;
+import com.dishcovery.project.domain.RecipeIngredientsDetailVO;
 import com.dishcovery.project.domain.SituationsVO;
 import com.dishcovery.project.domain.TypesVO;
 import com.dishcovery.project.util.Pagination;
@@ -21,43 +23,54 @@ public interface RecipeBoardService {
 
     // Recipe CRUD
     RecipeBoardVO getByRecipeBoardId(int recipeBoardId);
-    void createRecipe(RecipeBoardVO recipeBoard, List<Integer> ingredientIds, String hashtags, MultipartFile thumbnail);
-    void updateRecipe(RecipeBoardVO recipeBoard, List<Integer> ingredientIds, String hashtags, MultipartFile thumbnail);
+   void createRecipe(RecipeBoardVO recipeBoard, List<Integer> ingredientIds,
+                       String hashtags, MultipartFile thumbnail,
+                       List<RecipeBoardStepVO> steps, List<RecipeIngredientsDetailVO> ingredientDetails);
+   void updateRecipe(int id, RecipeBoardVO recipe, List<Integer> ingredientIds,
+                     String hashtags, MultipartFile thumbnail,
+                     List<RecipeBoardStepVO> steps,List<Integer> deleteStepIds,
+                     List<RecipeIngredientsDetailVO> ingredientDetails);
+   void updateRecipe(int id, RecipeBoardVO recipe);
     void deleteRecipe(int recipeBoardId);
 
-    // Recipe Details
+   // Recipe Details
     RecipeDetailVO getRecipeDetailById(int recipeBoardId);
 
+
     // Ingredients Management
-    List<IngredientsVO> getIngredientsByRecipeId(int recipeBoardId);
-    List<IngredientsVO> getAllIngredients();
-    Set<Integer> getSelectedIngredientIdsByRecipeBoardId(int recipeBoardId);
+    List<IngredientsVO> getAllIngredients(); // 모든 재료 조회
+    Set<Integer> getSelectedIngredientIdsByRecipeBoardId(int recipeBoardId); // 레시피에 선택된 재료 ID 조회
+
+    // Recipe Ingredient Details Management
+     List<RecipeIngredientsDetailVO> getRecipeIngredientsDetailsByRecipeId(int recipeBoardId); // 특정 레시피의 모든 재료 상세 정보 조회
 
     // Hashtags Management
     List<HashtagsVO> getHashtagsByRecipeBoardId(int recipeBoardId); // 특정 레시피의 해시태그 조회
     void saveHashtagsForRecipe(int recipeBoardId, String hashtags); // 해시태그 저장
     List<String> getHashtagNamesByRecipeBoardId(int recipeBoardId);
-    void addHashtagsToRecipe(int recipeBoardId, List<String> hashtagsToAdd);
-    void removeHashtagsFromRecipe(int recipeBoardId, List<String> hashtagsToRemove);
-    
+   void deleteHashtagForRecipe(int recipeBoardId, int hashtagId); // 특정 해시태그 삭제
+
     // Types, Methods, Situations
-    List<TypesVO> getAllTypes();
-    List<MethodsVO> getAllMethods();
-    List<SituationsVO> getAllSituations();
+    List<TypesVO> getAllTypes(); // 모든 Type 조회
+    List<MethodsVO> getAllMethods(); // 모든 Method 조회
+    List<SituationsVO> getAllSituations(); // 모든 Situation 조회
 
     // Pagination & Filtering
-    Map<String, Object> getRecipeBoardListWithFilters(Pagination pagination);
-    Pagination preprocessPagination(Pagination pagination);
+    Map<String, Object> getRecipeBoardListWithFilters(Pagination pagination); // 필터와 함께 레시피 목록 조회
+    Pagination preprocessPagination(Pagination pagination); // 페이징 처리 준비
 
     // Thumbnail Management
-    Optional<Resource> getThumbnailByRecipeBoardId(int recipeBoardId); // Optional로 리소스 반환
-    
-    /**
-     * 게시글 조회수를 증가시킵니다.
-     * 동일한 IP는 하루에 한 번만 조회수를 증가시킵니다.
-     *
-     * @param recipeBoardId 게시글 ID
-     * @param ipAddress     클라이언트 IP 주소
-     */
-    void increaseViewCountIfEligible(int recipeBoardId, String ipAddress);
+    Optional<Resource> getThumbnailByRecipeBoardId(int recipeBoardId); // Optional로 썸네일 리소스 반환
+
+    // Recipe Steps Management
+    List<RecipeBoardStepVO> getRecipeBoardStepsByBoardId(int recipeBoardId); // 레시피 스텝 목록 조회
+    void saveRecipeSteps(int recipeBoardId, List<RecipeBoardStepVO> steps);
+	RecipeBoardVO findRecipeById(int id);
+    Map<String, Object> findAllRecipes(Pagination pagination, Integer typeId, Integer situationId,
+                                               Integer methodId, String ingredientIds, String hashtag);
+	void registerRecipe(RecipeBoardVO recipe);
+	Map<String, Object> findAllRecipes(Pagination pagination);
+
+	
+	
 }

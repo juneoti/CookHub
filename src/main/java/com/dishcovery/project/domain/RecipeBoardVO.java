@@ -6,9 +6,6 @@ import lombok.ToString;
 import lombok.NoArgsConstructor;
 
 import java.util.Date;
-import java.util.List;
-
-import org.springframework.web.multipart.MultipartFile;
 
 @Getter
 @Setter
@@ -16,20 +13,22 @@ import org.springframework.web.multipart.MultipartFile;
 @NoArgsConstructor
 public class RecipeBoardVO {
 
-    private int recipeBoardId;
-    private String recipeBoardTitle;
-    private String recipeBoardContent;
-    private int memberId;
-    private Date recipeBoardCreatedDate;
-    private int viewCount;
-    private int typeId;
-    private int methodId;
-    private int situationId;
-    private double avgRating;
-    private int replyCount;
-    private int recipeReviewCount;
-    private String thumbnailPath;
-    private List<Integer> ingredientIds;
-    private String hashtags;
-    private MultipartFile thumbnail;
+	private int recipeBoardId;
+	String recipeBoardTitle;
+	String recipeBoardContent;
+	String memberId;
+	Date recipeBoardCreatedDate;
+	int viewCount;
+	int typeId;
+	int methodId;
+	int situationId;
+	int ingredientId;
+	double avgRating;
+	int replyCount;
+	int recipeReviewCount;
+	String thumbnailPath;
+	String recipeTip;
+	String servings;
+	String time;
+	String difficulty;
 }
