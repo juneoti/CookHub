@@ -12,16 +12,6 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
       <result property="recipeReviewContent" column="RECIPE_REVIEW_CONTENT" />
       <result property="reviewRating" column="REVIEW_RATING" />
       <result property="recipeReviewDateCreated" column="RECIPE_REVIEW_DATE_CREATED" />
-      
-     <collection property="reviewAttachList" ofType="com.dishcovery.project.domain.ReviewAttachVO">
-        <id property="attachId" column="ATTACH_ID"/>
-        <result property="attachPath" column="ATTACH_PATH"/>
-        <result property="attachRealName" column="ATTACH_REAL_NAME"/>
-        <result property="attachChgName" column="ATTACH_CHG_NAME"/>
-        <result property="attachExtension" column="ATTACH_EXTENSION"/>
-        <result property="attachDateCreated" column="ATTACH_DATE_CREATED"/>
-    </collection>
-      
    </resultMap>
 	
 	<insert id="insertRecipeReview">
@@ -30,14 +20,10 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
    	</insert>
 	
 	<select id="selectListByRecipeBoardId" resultMap="RecipeReviewResultMap">
-       SELECT r.*, 
-           a.ATTACH_ID, a.ATTACH_PATH, a.ATTACH_REAL_NAME, 
-           a.ATTACH_CHG_NAME, a.ATTACH_EXTENSION, a.ATTACH_DATE_CREATED
-       FROM RECIPE_REVIEW r
-       LEFT JOIN REVIEW_ATTACH a ON r.RECIPE_REVIEW_ID = a.RECIPE_REVIEW_ID
-       WHERE r.RECIPE_BOARD_ID = #{recipeBoardId}
-       ORDER BY r.RECIPE_REVIEW_ID
-	</select>
+       SELECT * FROM RECIPE_REVIEW
+       WHERE RECIPE_BOARD_ID = #{recipeBoardId}
+       ORDER BY RECIPE_REVIEW_ID
+   	</select>
    	
    	<update id="updateRecipeReview">
        UPDATE RECIPE_REVIEW
@@ -46,7 +32,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
        WHERE RECIPE_REVIEW_ID = #{recipeReviewId}
    	</update>
    	
-   	<delete id="deleteRecipeReview">  	
+   	<delete id="deleteRecipeReview">
        DELETE FROM RECIPE_REVIEW
        WHERE RECIPE_REVIEW_ID = #{recipeReviewId}
    	</delete>	
