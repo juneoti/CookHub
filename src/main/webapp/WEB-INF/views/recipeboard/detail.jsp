@@ -191,27 +191,35 @@
       value="${recipeBoard.recipeBoardId }">
 
 	<h2>댓글</h2>
-	
+<sec:authorize access="isAuthenticated()">	
    <div style="text-align: left;">
-      <input type="text" id="memberId">
-      <input type="text" id="replyContent" maxlength="150" placeholder="댓글을 입력하세요">
-      <button id="btnAdd">댓글 작성</button>
+      <sec:authentication var="customUser" property="principal" />
+      <c:set var="loggedInMemberId" value="${customUser.memberVO.memberId}" />   
    </div>
-	
+</sec:authorize>	
+
+<div style="text-align: left;">
+      <!-- memberId를 입력하는 대신 span 태그로 표시 -->
+      <span id="loggedInMemberId">${loggedInMemberId}</span>
+      <!-- hidden 필드로 memberId 전송 -->
+      <input type="hidden" id="memberId" value="${loggedInMemberId}">
+      
+      <input type="text" id="replyContent" maxlength="150" placeholder="댓글을 입력하세요">
+<button id="btnAdd">댓글 작성</button>
+</div>
 		
    <hr> 
-   <div style="text-align: left;">
       <div id="replies"></div>
-   </div>
-
    <hr>
    
    	<h2>리뷰</h2>	
    
   
    <div style="text-align: left;">
-      <input type="text" id="reviewMemberId">
-      <input type="text" id="recipeReviewContent">
+   		<span id="loggedInReviewMemberId">${loggedInMemberId}</span>
+        <input type="hidden" id="reviewMemberId" value="${loggedInMemberId}">
+   <input type="text" id="recipeReviewContent" placeholder="리뷰 내용을 입력하세요">     
+      
       <span class="star-rating"> <input
          type="radio" name="reviewRating" id="star1" value="1"><label
          for="star1"></label> <input type="radio" name="reviewRating"
@@ -222,6 +230,12 @@
          type="radio" name="reviewRating" id="star5" value="5"><label
          for="star5"></label>
       </span>
+      
+      <button id="btnReviewAdd">리뷰 작성</button>
+    </div>
+      
+       <hr>
+   	   <div id="reviews"></div>
       
       <div class="image-upload">
   
@@ -234,7 +248,6 @@
       <button id="btnReviewAdd">리뷰 작성</button>
       
       <script src="${pageContext.request.contextPath }/resources/js/image.js"></script>
-   </div>
 
    
    <hr>
@@ -311,22 +324,8 @@
 				    });
 				});
                      
-                     loadLikeStatus();
-                     
-                     
-                    $(document).ajaxSend(function(e, xhr, opt){
-                 		var token = $("meta[name='_csrf']").attr("content");
-                 		var header = $("meta[name='_csrf_header']").attr("content");
-                 		
-                 		xhr.setRequestHeader(header, token);
-                 	});
-                 	
-                 	$(document).ready(function(){
-                     	  
-                                      getAllReply(); // reply 함수 호출
-                                      getAllRecipeReview(); // review 함수 호출
-                                              
-
+                     loadLikeStatus();                                        
+                          
                      $('#btnAdd').click(function() {
                         var recipeBoardId = $('#recipeBoardId').val(); // 게시판 번호 데이터
                       	var memberId = $('#memberId').val();
@@ -451,7 +450,7 @@
                          $('#replies').on('click', '.btn_update', function() {
                            var replyId = $(this).data('reply-id'); // data 속성에서 replyId 가져오기
                            var replyContentSpan = $('.replyContentDisplay[data-reply-id="' + replyId + '"]'); // 수정할 span 요소 선택
-                           var currentContent = replyContentSpan.text().trim(); // 기존 텍스트 내용 가져오기
+                           var currentContent = replyContentSpan.text(); // 기존 텍스트 내용 가져오기
 						                                                       
                           // span 요소를 text input으로 변경
                            replyContentSpan.replaceWith('<input type="text" class="replyContentInput" data-reply-id="' + replyId + '" value="' + currentContent + '">');
@@ -461,11 +460,11 @@
 
                            
                            // 수정 완료 버튼 클릭 이벤트
-                             $('#replies').on('click', '.btn_update_complete', function() {
+                             $('#replies').off('click', '.btn_update_complete').on('click', '.btn_update_complete', function() {
                               
                                var replyId = $(this).data('reply-id');
                                var replyContentInput = $('.replyContentInput[data-reply-id="' + replyId + '"]');
-                               var updatedReplyContent = replyContentInput.val().trim();
+                               var updatedReplyContent = replyContentInput.val();
                                
                                  console.log("replyId : " + replyId + ", 수정할 내용 : " + updatedReplyContent);
 
@@ -587,11 +586,16 @@
                                                       + '&nbsp;&nbsp;'
                                                       + recipeReviewDateCreated
                                                       + '&nbsp;&nbsp;'
-                                                      + '<button class="btn_review_update" >수정</button>'
+                                          //          + '<button class="btn_review_update" >수정</button>'
                                                       + '<button class="btn_review_delete" >삭제</button>'
-                                                      + '<div class="review_images image-list">' + imageHTML + '</div>' // 이미지 추가
-                                                      + '</pre>'
-                                                      + '</div>';
+                                                                                                      
+                                                      // 이미지가 있는 경우만 추가
+                                                      if (imageHTML !== '') {
+                                                          list += '<div class="review_images image-list">' + imageHTML + '</div>';
+                                                      }
+
+                                                      list += '</pre>'
+                                                           + '</div>';
                                                       
                                                    });
                                                 $('#reviews').html(list);
@@ -612,7 +616,7 @@
                                                 // 선택된 리뷰의 replyId, replyContent 값을 저장
                                                 // prevAll() : 선택된 노드 이전에 있는 모든 형제 노드를 접근
                                                 var recipeReviewId = $(this).prevAll(
-                                                      '#recipeReivewId').val();
+                                                      '#recipeReviewId').val();
                                                 var recipeReviewContent = $(this)
                                                       .prevAll(
                                                             '#recipeReviewContent')
@@ -669,7 +673,7 @@
                                                                + '/'
                                                                + recipeBoardId,
                                                          headers : {
-                                                            'content-Type' : 'application/json'
+                                                            'Content-Type' : 'application/json'
                                                          },
                                                          success : function(
                                                                result) {
