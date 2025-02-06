@@ -1,29 +1,19 @@
 package com.dishcovery.project.service;
 
-import java.io.File;
-import java.io.IOException;
 import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
-import org.apache.ibatis.annotations.Mapper;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.io.FileSystemResource;
-import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.multipart.MultipartFile;
 
-import com.dishcovery.project.domain.RecipeBoardVO;
 import com.dishcovery.project.domain.RecipeReviewDTO;
 import com.dishcovery.project.domain.RecipeReviewVO;
 import com.dishcovery.project.domain.ReviewAttachDTO;
 import com.dishcovery.project.domain.ReviewAttachVO;
-import com.dishcovery.project.persistence.RecipeBoardMapper;
 import com.dishcovery.project.persistence.RecipeReviewMapper;
 import com.dishcovery.project.persistence.ReviewAttachMapper;
-import com.dishcovery.project.util.FileUploadUtil;
+
 
 import lombok.extern.log4j.Log4j;
 
@@ -45,9 +35,11 @@ public class RecipeReviewServiceImple implements RecipeReviewService{
 		int insertRecipeReviewResult = recipeReviewMapper.insertRecipeReview(toEntity(recipeReviewDTO));
 		log.info(insertRecipeReviewResult + "행 리뷰 등록");
 		
+		
 		List<ReviewAttachDTO> reviewAttachList = recipeReviewDTO.getReviewAttachList();
 		
 		int insertReviewAttachResult = 0;
+		
 		for(ReviewAttachDTO reviewAttachDTO : reviewAttachList) {
 			insertRecipeReviewResult += reviewAttachMapper.attachInsert(toEntity(reviewAttachDTO));
 		}
@@ -63,6 +55,8 @@ public class RecipeReviewServiceImple implements RecipeReviewService{
 		
 		return list.stream().map(this::toDTO).collect(Collectors.toList());
 	} // end getAllRecipeReview
+	
+	
 	
 	@Override
 	@Transactional(value = "transactionManager")
@@ -87,15 +81,17 @@ public class RecipeReviewServiceImple implements RecipeReviewService{
 	} // end updateRecipeReview()
 	
 	@Transactional(value = "transactionManager")
-	
 	@Override
 	public int deleteRecipeReview(int recipeReviewId, int recipeBoardId) {
 		log.info("deleteRecipeReview()");
 		log.info("recipeReviewId = " + recipeReviewId);
-		int deleteRecipeReviewResult = recipeReviewMapper.deleteRecipeReview(recipeReviewId);
-		log.info(deleteRecipeReviewResult + "행 리뷰 정보 삭제");
+		
 		int deleteReviewAttachResult = reviewAttachMapper.attachDelete(recipeReviewId);
 		log.info(deleteReviewAttachResult + "행 이미지 정보 삭제");
+		
+		int deleteRecipeReviewResult = recipeReviewMapper.deleteRecipeReview(recipeReviewId);
+		log.info(deleteRecipeReviewResult + "행 리뷰 정보 삭제");
+		
 //		int updateResult = recipeBoardMapper
 //				.updateRecipeReviewCount(recipeBoardId, -1);
 //		log.info(updateResult + "�뻾 寃뚯떆�뙋 �닔�젙");
@@ -112,8 +108,15 @@ public class RecipeReviewServiceImple implements RecipeReviewService{
 		recipeReviewDTO.setMemberId(recipeReview.getMemberId());
 		recipeReviewDTO.setReviewRating(recipeReview.getReviewRating());
 		recipeReviewDTO.setRecipeReviewDateCreated(recipeReview.getRecipeReviewDateCreated());
-		recipeReviewDTO.setImagePath(recipeReview.getImagePath());
 		recipeReviewDTO.setRecipeBoardId(recipeReview.getRecipeBoardId());
+		
+		// 이미지 정보도 DTO로 변환하여 추가
+	    if (recipeReview.getReviewAttachList() != null) {
+	        recipeReviewDTO.setReviewAttachList(recipeReview.getReviewAttachList().stream()
+	            .map(this::toDTO) // ReviewAttachVO → ReviewAttachDTO 변환
+	            .collect(Collectors.toList()));
+	    }
+		
 		return recipeReviewDTO;
 	} // end toDTO()
 	
@@ -124,7 +127,6 @@ public class RecipeReviewServiceImple implements RecipeReviewService{
 		recipeReview.setRecipeReviewContent(recipeReviewDTO.getRecipeReviewContent());
 		recipeReview.setMemberId(recipeReviewDTO.getMemberId());
 		recipeReview.setReviewRating(recipeReviewDTO.getReviewRating());
-		recipeReview.setImagePath(recipeReviewDTO.getImagePath());
 		recipeReview.setRecipeBoardId(recipeReviewDTO.getRecipeBoardId());
 		return recipeReview;
 	}

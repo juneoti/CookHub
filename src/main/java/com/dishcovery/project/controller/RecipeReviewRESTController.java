@@ -35,7 +35,7 @@ public class RecipeReviewRESTController {
 		log.info("recipReviewDTO = " + recipeReviewDTO);
 		
 		int result = recipeReviewService.createRecipeReview(recipeReviewDTO);
-		
+		log.info(result + "리뷰 등록");
 		return new ResponseEntity<Integer>(result, HttpStatus.OK);
 		
 	}
@@ -72,8 +72,7 @@ public class RecipeReviewRESTController {
 	@DeleteMapping("/reviews/{recipeReviewId}/{recipeBoardId}")
 	public ResponseEntity<Integer> deleteRecipeReview(
 			@PathVariable("recipeReviewId") int recipeReviewId,
-			@PathVariable("recipeBoardId") int recipeBoardId,
-			@RequestBody String memberId) {
+			@PathVariable("recipeBoardId") int recipeBoardId) {
 		log.info("deleteRecipe()");
 		log.info("recipeReviewId = " + recipeReviewId);
 

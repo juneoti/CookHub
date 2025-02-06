@@ -47,7 +47,7 @@ public class ReplyRESTController {
 	}
 	
 	
-	@PreAuthorize("#customUser.memberVO.memberId == #reply.memberId")
+//	@PreAuthorize("#customUser.memberVO.memberId == #reply.memberId")
 	@PutMapping("replies/{replyId}") // PUT : 댓글 수정
 	 public ResponseEntity<Integer> updateReply(
 		        @PathVariable("replyId") int replyId,
@@ -60,7 +60,7 @@ public class ReplyRESTController {
 	}
 	
 	
-	@PreAuthorize("#customUser.memberVO.memberId == #reply.memberId")
+//	@PreAuthorize("#customUser.memberVO.memberId == #reply.memberId")
 	@DeleteMapping("replies/{replyId}/{recipeBoardId}") // DELETE : 댓글 삭제
 	 public ResponseEntity<Integer> deleteReply(
 			 @PathVariable("replyId") int replyId,

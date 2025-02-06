@@ -67,7 +67,7 @@ $(document).ready(function(){
 				
 		$.ajax({
 			type : 'post', 
-			url : '../image', 
+			url : '/project/image', 
 			data : formData,
 			processData : false,
 			contentType : false,
@@ -95,6 +95,7 @@ $(document).ready(function(){
 					input.val(JSON.stringify(reviewAttachDTO));
 					
 		       		// div에 input 태그 추가
+		       		
 		        	$('.reviewAttachDTOImg-list').append(input);
 				  	
 				    // display() 메서드에서 이미지 호출을 위한 문자열 구성
@@ -102,11 +103,11 @@ $(document).ready(function(){
 				    	+ '<pre>'
 				    	+ '<input type="hidden" id="attachPath" value="'+ this.attachPath +'">'
 				    	+ '<input type="hidden" id="attachChgName" value="'+ reviewAttachDTO.attachChgName +'">'
-				    	+ '<input type="hidden" id="attachExtension" value="'+ reviewattachDTO.attachExtension +'">'
-				        + '<a href="../image/display?attachPath=' + attachPath + '&attachChgName='
+				    	+ '<input type="hidden" id="attachExtension" value="'+ reviewAttachDTO.attachExtension +'">'
+				        + '<a href="/project/image/display?attachPath=' + attachPath + '&attachChgName='
 				        + reviewAttachDTO.attachChgName + "&attachExtension=" + reviewAttachDTO.attachExtension
 				        + '" target="_blank">'
-				        + '<img width="100px" height="100px" src="../image/display?attachPath=' 
+				        + '<img width="100px" height="100px" src="/project/image/display?attachPath=' 
 				        + attachPath + '&attachChgName='
 				        + 't_' + reviewAttachDTO.attachChgName 
 				        + "&attachExtension=" + reviewAttachDTO.attachExtension
@@ -119,6 +120,7 @@ $(document).ready(function(){
 
 				// list 문자열 image-list div 태그에 적용
 				$('.image-list').html(list);
+				
 			} // end success
 		
 		}); // end $.ajax()
@@ -139,7 +141,7 @@ $(document).ready(function(){
 		// ajax 요청
 		$.ajax({
 			type : 'POST', 
-			url : '../image/delete', 
+			url : '/image/delete', 
 			data : {
 				attachPath : attachPath, 
 				attachChgName : attachChgName,

@@ -34,16 +34,16 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .antMatchers("/recipeboard/register").permitAll()
         		.antMatchers("/recipeboard/update").permitAll()
         		.antMatchers("/recipeboard/delete").permitAll()
-        		.antMatchers("/recipeboard/detail").permitAll()
-        		.antMatchers("/recipeboard/replies/detail").access("hasRole('ROLE_MEMBER')")
-        		.antMatchers("/recipeboard/replies/{replyId}").access("hasRole('ROLE_MEMBER')")
-        		.antMatchers("/recipeboard/replies/{replyId}/{recipeBoardId}").access("hasRole('ROLE_MEMBER')")
-        		.antMatchers("/recipeboard/all/{recipeBoardId}").access("hasRole('ROLE_MEMBER')")
-        		.antMatchers("/recipeboard/reviews/detail").access("hasRole('ROLE_MEMBER')")
-        		.antMatchers("/recipeboard/reviews/{recipeReviewId}").access("hasRole('ROLE_MEMBER')")
-        		.antMatchers("/recipeboard/reviews/{recipeReviewId}/{recipeBoardId}").access("hasRole('ROLE_MEMBER')")
-        		.antMatchers("/recipeboard/allReviews/{recipeBoardId}").access("hasRole('ROLE_MEMBER')");
-
+        		.antMatchers("/recipeboard/detail").permitAll();
+//        		.antMatchers("/recipeboard/replies/detail").access("hasRole('ROLE_MEMBER')")
+//        		.antMatchers("/recipeboard/replies/{replyId}").access("hasRole('ROLE_MEMBER')")
+//        		.antMatchers("/recipeboard/replies/{replyId}/{recipeBoardId}").access("hasRole('ROLE_MEMBER')")
+//        		.antMatchers("/recipeboard/all/{recipeBoardId}").access("hasRole('ROLE_MEMBER')")
+//        		.antMatchers("/recipeboard/reviews/detail").access("hasRole('ROLE_MEMBER')")
+//        		.antMatchers("/recipeboard/reviews/{recipeReviewId}").access("hasRole('ROLE_MEMBER')")
+//        		.antMatchers("/recipeboard/reviews/{recipeReviewId}/{recipeBoardId}").access("hasRole('ROLE_MEMBER')")
+//        		.antMatchers("/recipeboard/allReviews/{recipeBoardId}").access("hasRole('ROLE_MEMBER')");
+//
         
         
         // 접근 제한 경로 설정

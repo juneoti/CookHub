@@ -26,7 +26,6 @@ public class ReviewAttachServiceImple implements ReviewAttachService{
 	private ReviewAttachDTO toDTO(ReviewAttachVO reviewAttach) {
 		ReviewAttachDTO reviewAttachDTO = new ReviewAttachDTO();
 		reviewAttachDTO.setAttachId(reviewAttach.getAttachId());
-		reviewAttachDTO.setMemberId(reviewAttach.getMemberId());
 		reviewAttachDTO.setRecipeReviewId(reviewAttach.getRecipeReviewId());
 		reviewAttachDTO.setAttachPath(reviewAttach.getAttachPath());
 		reviewAttachDTO.setAttachRealName(reviewAttach.getAttachRealName());

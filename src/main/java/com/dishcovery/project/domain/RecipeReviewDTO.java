@@ -20,14 +20,13 @@ public class RecipeReviewDTO {
 	private String recipeReviewContent;
 	private int reviewRating;
 	private Date recipeReviewDateCreated;
-	private String imagePath;
 	
-	private List<ReviewAttachDTO> ReviewAttachList;
+	private List<ReviewAttachDTO> reviewAttachList;
 	
 	public List<ReviewAttachDTO> getReviewAttachList(){
-		if(ReviewAttachList == null) {
-			ReviewAttachList = new ArrayList<ReviewAttachDTO>();
+		if(reviewAttachList == null) {
+			reviewAttachList = new ArrayList<ReviewAttachDTO>();
 		}
-		return ReviewAttachList;
+		return reviewAttachList;
 	}
 }

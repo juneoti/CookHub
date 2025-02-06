@@ -28,7 +28,7 @@ public class CustomUser extends User {
         this.name = memberVO.getName();        
     }
     
-    public int getMemberId() {
-    	return memberVO.getMemberId();
-    }
+//    public int getMemberId() {
+//    	return memberVO.getMemberId();
+//    }
 }

@@ -10,7 +10,6 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 		
 		<id property="attachId" column="ATTACH_ID"/>
 		<result property="recipeReviewId" column="RECIPE_REVIEW_ID"/>
-		<result property="memberId" column="MEMBER_ID"/>
 		<result property="attachPath" column="ATTACH_PATH"/>
 		<result property="attachRealName" column="ATTACH_REAL_NAME"/>
 		<result property="attachChgName" column="ATTACH_CHG_NAME"/>
@@ -20,8 +19,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 	
 	<insert id="attachInsert">
     	INSERT INTO REVIEW_ATTACH
-    	(ATTACH_ID, RECIPE_REVIEW_ID, MEMBER_ID, ATTACH_PATH, ATTACH_REAL_NAME, ATTACH_CHG_NAME, ATTACH_EXTENSION) 
-    	VALUES (SEQ_REVIEW_ATTACH.NEXTVAL, RECIPE_REVIEW_SEQ.CURRVAL, #{memberId}, #{attachPath}, #{attachRealName}, #{attachChgName}, #{attachExtension})
+    	(ATTACH_ID, RECIPE_REVIEW_ID, ATTACH_PATH, ATTACH_REAL_NAME, ATTACH_CHG_NAME, ATTACH_EXTENSION) 
+    	VALUES (SEQ_REVIEW_ATTACH.NEXTVAL, RECIPE_REVIEW_SEQ.CURRVAL, #{attachPath}, #{attachRealName}, #{attachChgName}, #{attachExtension})
 	</insert>
 	
 	<select id="selectByRecipeReviewId" resultMap="reviewattachMap">
@@ -36,8 +35,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 	
 	<insert id="insertModify">
 		INSERT INTO REVIEW_ATTACH
-		(REVIEW_ATTACH_ID, RECIPE_REVIEW_ID, MEMBER_ID, ATTACH_PATH, ATTACH_REAL_NAME, ATTACH_CHG_NAME, ATTACH_EXTENSION)
-		VALUES (SEQ_REVIEW_ATTACH.NEXTVAL, #{recipeReviewId}, #{memberId}, #{attachPath}, #{attachRealName}, #{attachChgName}, #{attachExtension})
+		(REVIEW_ATTACH_ID, RECIPE_REVIEW_ID, ATTACH_PATH, ATTACH_REAL_NAME, ATTACH_CHG_NAME, ATTACH_EXTENSION)
+		VALUES (SEQ_REVIEW_ATTACH.NEXTVAL, #{recipeReviewId}, #{attachPath}, #{attachRealName}, #{attachChgName}, #{attachExtension})
 	</insert>
 	
 	<delete id="attachDelete">

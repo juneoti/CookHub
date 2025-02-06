@@ -14,10 +14,10 @@
 <!-- css 파일 불러오기 -->
 <link rel="stylesheet"
 	href="${pageContext.request.contextPath }/resources/css/image.css">
-<!--  
+  
 <meta name="_csrf" content="${_csrf.token}" />
 <meta name="_csrf_header" content="${_csrf.headerName}" />
--->
+
 <title>${recipeBoard.recipeBoardTitle }</title>
 
 <style>
@@ -144,23 +144,19 @@
     </script>
 
 
-	<!-- isAnonymous(): 인증되지 않은(로그인하지 않은) 사용자만 접근을 허용 -->
+	
    <input type="hidden" id="recipeBoardId"
       value="${recipeBoard.recipeBoardId }">
 
 	<h2>댓글</h2>
-	<sec:authorize access="isAnonymous()">
-		*댓글을 작성하려면 로그인해 주세요.
-	</sec:authorize>	
-
-	<!-- isAuthenticated(): 인증된(로그인한) 사용자라면 누구나 접근을 허용 -->
-	<sec:authorize access="isAuthenticated()">	
+	
    <div style="text-align: left;">
-      <input type="hidden" id="memberId" value="${user.username }"> 
-      <input type="text" id="replyContent" maxlength="150">
+   	  <span id="loggedInMemberId"></span> <!-- 로그인한 사용자 ID 표시 -->
+      <input type="hidden" id="memberId">
+      <input type="text" id="replyContent" maxlength="150" placeholder="댓글을 입력하세요">
       <button id="btnAdd">댓글 작성</button>
    </div>
-	</sec:authorize>
+	
 		
    <hr> 
    <div style="text-align: left;">
@@ -169,14 +165,11 @@
 
    <hr>
    
-   	<h2>리뷰</h2>
-   	<sec:authorize access="isAnonymous()">
-		*리뷰를 작성하려면 로그인해 주세요.
-	</sec:authorize>	
+   	<h2>리뷰</h2>	
    
-   <sec:authorize access="isAuthenticated()">	
+  
    <div style="text-align: left;">
-      <input type="hidden" id="reviewMemberId" value="${user.username }">
+      <input type="text" id="reviewMemberId">
       <input type="text" id="recipeReviewContent">
       <span class="star-rating"> <input
          type="radio" name="reviewRating" id="star1" value="1"><label
@@ -190,20 +183,18 @@
       </span>
       
       <div class="image-upload">
-		<div class="image-drop"></div>
+  
+		<div class="image-drop">drag - image</div>
 	  </div>
 
 		<div class="reviewAttachDTOImg-list">
 	  </div>
-	
-	  <div class="reviewAttachDTOFile-list">
-	  </div>
-      
+ 
       <button id="btnReviewAdd">리뷰 작성</button>
       
       <script src="${pageContext.request.contextPath }/resources/js/image.js"></script>
    </div>
-   </sec:authorize>
+
    
    <hr>
    <div style="text-align: left;">
@@ -212,12 +203,12 @@
   
    <script type="text/javascript">
    
-//  $(document).ajaxSend(function(e, xhr, opt){
-//		var token = $("meta[name='_csrf']").attr("content");
-//		var header = $("meta[name='_csrf_header']").attr("content");
+	  $(document).ajaxSend(function(e, xhr, opt){
+		var token = $("meta[name='_csrf']").attr("content");
+		var header = $("meta[name='_csrf_header']").attr("content");
 		
-//		xhr.setRequestHeader(header, token);
-//	});
+		xhr.setRequestHeader(header, token);
+	});
 	
 	$(document).ready(function(){
     	  
@@ -226,7 +217,7 @@
                              
                      $('#btnAdd').click(function() {
                         var recipeBoardId = $('#recipeBoardId').val(); // 게시판 번호 데이터
-                        var memberId = $('#memberId').val(); // 작성자 데이터
+                      	var memberId = $('#memberId').val();
                         var replyContent = $('#replyContent').val(); // 댓글 내용
                         // JS객체 생성
                         var obj = {
@@ -252,13 +243,8 @@
                               } else {
                                  alert('댓글 입력 실패');
                               }
-                           },
-                           error: function(xhr, status, error){ 
-                        
-                           console.error("AJAX 에러 발생:", status, error);
-                           alert('댓글 입력 중 오류가 발생했습니다.');
                            }
-                           
+                       
                         });
                      }); // end btn Add.click()
                      
@@ -274,16 +260,29 @@
                            if (!reviewRating) {
                                alert('0점 이외의 별점을 입력하세요');
                                return;
-                           }
-
+                           }                                           
+                           
+                           // hidden input에서 reviewAttachDTO 값 가져오기
+                           var reviewAttachDTOs = [];
+                           $("input[type='hidden'][name='reviewAttachDTO']").each(function() {
+                               var attachData = JSON.parse($(this).val()); // JSON 파싱
+                               reviewAttachDTOs.push(attachData);
+                           });
+                           
                            var obj = {
                                'recipeBoardId': recipeBoardId,
                                'memberId': memberId,
                                'recipeReviewContent': recipeReviewContent,
                                'reviewRating': reviewRating
-                               
-                               
+                            
                            };
+                           
+                           if (reviewAttachDTOs.length > 0) {
+                        	    obj.reviewAttachList = reviewAttachDTOs;
+                        	} else {
+                        	    obj.reviewAttachList = [];
+                        	}
+                           
                            
                            console.log("전송 데이터:", obj);
 
@@ -297,6 +296,7 @@
                                    if (result == 1) {
                                        alert('리뷰 입력 성공');
                                        getAllRecipeReview();
+                                       
                                    } else {
                                        alert('리뷰 입력 실패');
                                    }
@@ -339,19 +339,22 @@
                          $('#replies').on('click', '.btn_update', function() {
                            var replyId = $(this).data('reply-id'); // data 속성에서 replyId 가져오기
                            var replyContentSpan = $('.replyContentDisplay[data-reply-id="' + replyId + '"]'); // 수정할 span 요소 선택
-                           var currentContent = replyContentSpan.text(); // 기존 텍스트 내용 가져오기
-
-                        // span 요소를 text input으로 변경
+                           var currentContent = replyContentSpan.text().trim(); // 기존 텍스트 내용 가져오기
+						                                                       
+                          // span 요소를 text input으로 변경
                            replyContentSpan.replaceWith('<input type="text" class="replyContentInput" data-reply-id="' + replyId + '" value="' + currentContent + '">');
+                                                  
+                           // 수정 완료 버튼으로 변경
+                           $(this).replaceWith('<button class="btn_update_complete" data-reply-id="' + replyId + '">수정 완료</button>');
 
-
+                           
                            // 수정 완료 버튼 클릭 이벤트
                              $('#replies').on('click', '.btn_update_complete', function() {
                               
                                var replyId = $(this).data('reply-id');
                                var replyContentInput = $('.replyContentInput[data-reply-id="' + replyId + '"]');
-
-                               var updatedReplyContent = replyContentInput.val();
+                               var updatedReplyContent = replyContentInput.val().trim();
+                               
                                  console.log("replyId : " + replyId + ", 수정할 내용 : " + updatedReplyContent);
 
                                   $.ajax({
@@ -377,9 +380,7 @@
                                  
                                 });
                               
-                              // 수정 완료 버튼으로 변경
-                             $(this).replaceWith('<button class="btn_update_complete" data-reply-id="' + replyId + '">수정 완료</button>');
-
+                             
                          });
                        });
                      }   
@@ -445,6 +446,23 @@
                                                           }
                                                       }
                                                       
+                                                      // 이미지 표시 HTML 생성
+                                                      var imageHTML = '';
+                                                      if (this.reviewAttachList && this.reviewAttachList.length > 0) {
+                                                          this.reviewAttachList.forEach(function(reviewAttach) {
+                                                              var imageUrl = "/project/image/display?attachPath=" + encodeURIComponent(reviewAttach.attachPath) + 
+                                                                             "&attachChgName=" + encodeURIComponent(reviewAttach.attachChgName) + 
+                                                                             "&attachExtension=" + encodeURIComponent(reviewAttach.attachExtension);
+                                                              
+                                                              imageHTML += '<div class="image_item" data-chgName="'+ reviewAttach.attachChgName +'">'
+                                                                        + '<a href="' + imageUrl + '" target="_blank">'
+                                                                        + '<img width="100px" height="100px" src="' + imageUrl + '" />'
+                                                                        + '</a>'                                                                       
+                                                                        + '</div>';
+                                                          });
+                                                      }
+                                                      
+                                                      
                                                       list += '<div class="review_item">'
                                                       + '<pre>'
                                                       + '<input type="hidden" id="recipeReviewId" value="' + this.recipeReviewId + '">'
@@ -459,6 +477,7 @@
                                                       + '&nbsp;&nbsp;'
                                                       + '<button class="btn_review_update" >수정</button>'
                                                       + '<button class="btn_review_delete" >삭제</button>'
+                                                      + '<div class="review_images image-list">' + imageHTML + '</div>' // 📸 이미지 추가
                                                       + '</pre>'
                                                       + '</div>';
                                                       

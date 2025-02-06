@@ -9,20 +9,20 @@ import java.util.ArrayList;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.http.ResponseEntity;
 
 import com.dishcovery.project.domain.ReviewAttachDTO;
 import com.dishcovery.project.service.ReviewAttachService;
-import com.dishcovery.project.util.FileUploadUtil;
+import com.dishcovery.project.util.ImageUploadUtil;
 
 import lombok.extern.log4j.Log4j;
 
@@ -31,17 +31,15 @@ import lombok.extern.log4j.Log4j;
 @Log4j
 public class ImageUploadRESTController {
 	
-	@Value("${file.upload.path}")
-	private String uploadPath;
-	
-//	private final String uploadPath = "C:\\reviewuploads"; // 필드 초기화로 경로 직접 설정
+	@Autowired
+    private String uploadPath;
 	
 	@Autowired
 	private ReviewAttachService reviewAttachService;
 	
 	@PostMapping
-	public ResponseEntity<ArrayList<ReviewAttachDTO>> createImage(MultipartFile[] files) {
-		log.info("createImage()");
+	public ResponseEntity<ArrayList<ReviewAttachDTO>> createImage(@RequestParam("files")MultipartFile[] files) {
+		log.info("요청됨: createImage()");
 		
 		ArrayList<ReviewAttachDTO> list = new ArrayList<>();
 		
@@ -49,19 +47,19 @@ public class ImageUploadRESTController {
 			// UUID 생성
 			String chgName = UUID.randomUUID().toString();
 			// 파일 저장
-			FileUploadUtil.saveFile(uploadPath, file, chgName);
+			ImageUploadUtil.saveFile(uploadPath, file, chgName);
 			
-			String path = FileUploadUtil.makeDatePath();
-			String extension = FileUploadUtil.subStrExtension(file.getOriginalFilename());
+			String path = ImageUploadUtil.makeDatePath();
+			String extension = ImageUploadUtil.subStrExtension(file.getOriginalFilename());
 			
-			FileUploadUtil.createThumbnail(uploadPath, path, chgName, extension);
+			ImageUploadUtil.createThumbnail(uploadPath, path, chgName, extension);
 			//util 작성
 			
 			ReviewAttachDTO reviewAttachDTO = new ReviewAttachDTO();
 			// 파일 경로 설정
 			reviewAttachDTO.setAttachPath(path);
 			// 파일 실제 이름 설정
-			reviewAttachDTO.setAttachRealName(FileUploadUtil.subStrName(file.getOriginalFilename()));
+			reviewAttachDTO.setAttachRealName(ImageUploadUtil.subStrName(file.getOriginalFilename()));
 			// 파일 변경 이름(UUID) 설정
 			reviewAttachDTO.setAttachChgName(chgName);
 			// 파일 확장자 설정
@@ -150,7 +148,7 @@ public class ImageUploadRESTController {
 		log.info(attachChgName);
 		
 		String thumbnailName = "t_" + attachChgName + "." + attachExtension;
-		FileUploadUtil.deleteFile(uploadPath, attachPath, thumbnailName);
+		ImageUploadUtil.deleteFile(uploadPath, attachPath, thumbnailName);
 		
 		return new ResponseEntity<Integer>(1, HttpStatus.OK);
 		}
