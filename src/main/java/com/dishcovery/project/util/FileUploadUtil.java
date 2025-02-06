@@ -9,6 +9,8 @@ import org.apache.commons.io.FilenameUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import lombok.extern.log4j.Log4j;
+import net.coobird.thumbnailator.Thumbnails;
+
 
 @Log4j
 public class FileUploadUtil {
@@ -120,6 +122,60 @@ public class FileUploadUtil {
 
         if (file.exists()) {
             if (file.delete()) {
+                System.out.println(fullPath + " file delete success.");
+            } else {
+                System.out.println(fullPath + " file delete failed.");
+            }
+        } else {
+            System.out.println(fullPath + " file not found.");
+        }
+    }
+    
+    /**
+     * 원본 이미지로 섬네일 파일을 생성
+     * 
+     * @param uploadPath 업로드된 파일의 기본 경로
+     * @param path 업로드된 파일의 상세 경로
+     * @param chgName 변경된 파일명
+     * @param extension 파일 확장자
+     */
+    public static void createThumbnail(String uploadPath, String path,
+    		String chgName, String extension) {
+    	String realUploadPath = uploadPath + File.separator + path;
+    	String reviewImageName = "t_" + chgName; // 이미지 파일 이름
+    	
+    	// 이미지 저장 경로 및 이름
+    	File destPath = new File(realUploadPath, reviewImageName);
+    	
+    	File savePath = new File(realUploadPath, chgName);
+    	try {
+    		Thumbnails.of(savePath)
+    					.size(100, 100) // 이미지 크기 지정
+    					.outputFormat(extension) // 확장자 설정
+    					.toFile(destPath);
+    	} catch (IOException e) {
+    		
+    		e.printStackTrace();
+    	}
+    }
+    
+    /**
+     * 파일을 삭제
+     * 
+     * @param uploadPath 파일 업로드 경로
+     * @param path 파일이 저장된 날짜 경로
+     * @param chgName 저장된 파일 이름
+     */
+    public static void deleteFile(String uploadPath, String path, String chgName) {
+        // 삭제할 파일의 전체 경로 생성
+        String fullPath = uploadPath + File.separator + path + File.separator + chgName;
+        
+        // 파일 객체 생성
+        File file = new File(fullPath);
+        
+        // 파일이 존재하는지 확인하고 삭제
+        if(file.exists()) {
+            if(file.delete()) {
                 System.out.println(fullPath + " file delete success.");
             } else {
                 System.out.println(fullPath + " file delete failed.");

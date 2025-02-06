@@ -36,13 +36,13 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     @Override
     protected void configure(HttpSecurity httpSecurity) throws Exception {
         httpSecurity.authorizeRequests()
+
 				.antMatchers("/member/detail").access("hasRole('ROLE_MEMBER') or hasRole('ROLE_ADMIN')")
 				.antMatchers("/member/update").access("hasRole('ROLE_MEMBER') or hasRole('ROLE_ADMIN')")
                 .antMatchers("/recipeboard/register").authenticated()
         		.antMatchers("/recipeboard/update/**").access("hasRole('ROLE_MEMBER')")
         		.antMatchers("/recipeboard/delete/**").access("hasRole('ROLE_MEMBER')")
         		.antMatchers("/recipeboard/detail").permitAll();
-
 
         // 접근 제한 경로 설정
         httpSecurity.exceptionHandling().accessDeniedPage("/auth/accessDenied");
