@@ -3,6 +3,8 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 <%@ taglib prefix="sec" uri="http://www.springframework.org/security/tags" %>
 <%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt"%>
+<%@ taglib uri="http://www.springframework.org/security/tags" prefix="sec" %>
+
 <!DOCTYPE html>
 <html>
 <head>
@@ -11,12 +13,14 @@
 <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
 <meta charset="UTF-8">
 
+
 <!-- css 파일 불러오기 -->
 <link rel="stylesheet"
 	href="${pageContext.request.contextPath }/resources/css/image.css">
   
-<meta name="_csrf" content="${_csrf.token}" />
-<meta name="_csrf_header" content="${_csrf.headerName}" />
+    <!-- CSRF 토큰 추가 -->
+    <meta name="_csrf" content="${_csrf.token}" />
+    <meta name="_csrf_header" content="${_csrf.headerName}" />
 
 <title>${recipeBoard.recipeBoardTitle }</title>
 
@@ -53,16 +57,30 @@
   .hashtags {
     margin-top: 20px;
   }
-  .hashtags span {
-    display: inline-block;
-    background-color: #f1f1f1;
-    padding: 5px 10px;
-    margin: 5px;
-    border-radius: 15px;
-    font-size: 14px;
-    color: #333;
-  }
+	.hashtag-button {
+	   display: inline-block;
+	   background-color: #4CAF50;
+	   color: white;
+	   border: none;
+	   padding: 7px 15px;
+	   margin: 5px;
+	   border-radius: 15px;
+	   font-size: 14px;
+	   cursor: pointer;
+	}
+
+.hashtag-button:hover {
+   background-color: #45a049;
+}
+
   
+  .thumbnail {
+    max-width: 200px;
+    max-height: 200px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    object-fit: cover;
+}
 </style>
 
 </head>
@@ -74,6 +92,11 @@
       <p>${recipeBoard.recipeBoardTitle }</p>
    </div>
    <div>
+      <p>Thumbnail:</p>
+      <img src="${pageContext.request.contextPath}/recipeboard/thumbnail/${recipeBoard.recipeBoardId}" 
+    	 alt="Thumbnail" class="thumbnail">
+   </div>
+   <div>
       <p>작성자 : ${recipeBoard.memberId }</p>
       <!-- boardDateCreated 데이터 포멧 변경 -->
       <fmt:formatDate value="${recipeBoard.recipeBoardCreatedDate }"
@@ -83,7 +106,7 @@
    <div>
       <textarea rows="20" cols="120" readonly>${recipeBoard.recipeBoardContent }</textarea>
    </div>
-
+	
    <div>
       <p>타입 : ${typeName}</p>
    </div>
@@ -103,10 +126,12 @@
    </div>
 
     <!-- 해시태그 표시 -->
-   <div class="hashtags">
+	<div class="hashtags">
       <h3>Hashtags:</h3>
       <c:forEach var="hashtag" items="${hashtags}">
-         <span>#${hashtag.hashtagName}</span>
+         <button class="hashtag-button" data-hashtag="${hashtag.hashtagName}">
+            #${hashtag.hashtagName}
+         </button>
       </c:forEach>
    </div>
    
@@ -120,10 +145,21 @@
       </c:forEach>
    </div>
    <button onclick="location.href='recipeboard/list'">글 목록</button>
-   <button
-      onclick="location.href='recipeboard/update/${recipeBoard.recipeBoardId}'">글
-      수정</button>
-   <button type="button" id="deleteBoard">글 삭제</button>
+	
+	<!-- 글 수정/삭제 버튼 -->
+	<sec:authorize access="isAuthenticated()">
+	<sec:authentication var="customUser" property="principal" />
+	   <c:if test="${recipeBoard.memberId == customUser.memberVO.memberId}">
+	      <button onclick="location.href='recipeboard/update/${recipeBoard.recipeBoardId}'">글 수정</button>
+	      <button type="button" id="deleteBoard">글 삭제</button>
+	   </c:if>
+	</sec:authorize>
+
+   <div>
+   	<button id="like-button">좋아요</button>
+    <span id="like-count">0</span>
+   </div>
+
    <form id="deleteForm"
       action="recipeboard/delete/${recipeBoard.recipeBoardId}" method="POST">
 
@@ -140,6 +176,12 @@
                     $('#deleteForm').submit(); // form 데이터 전송
                 }
             });
+            
+            $(".hashtag-button").click(function () {
+                var hashtag = $(this).data("hashtag");
+                var url = "${pageContext.request.contextPath}/recipeboard/list?hashtag=" + encodeURIComponent(hashtag);
+                window.location.href = url;
+            });
         }); // end document
     </script>
 
@@ -151,8 +193,7 @@
 	<h2>댓글</h2>
 	
    <div style="text-align: left;">
-   	  <span id="loggedInMemberId"></span> <!-- 로그인한 사용자 ID 표시 -->
-      <input type="hidden" id="memberId">
+      <input type="text" id="memberId">
       <input type="text" id="replyContent" maxlength="150" placeholder="댓글을 입력하세요">
       <button id="btnAdd">댓글 작성</button>
    </div>
@@ -203,18 +244,89 @@
   
    <script type="text/javascript">
    
-	  $(document).ajaxSend(function(e, xhr, opt){
-		var token = $("meta[name='_csrf']").attr("content");
-		var header = $("meta[name='_csrf_header']").attr("content");
-		
-		xhr.setRequestHeader(header, token);
-	});
-	
-	$(document).ready(function(){
-    	  
-                     getAllReply(); // reply 함수 호출
+      $(document)
+            .ready(
+                  function() {
+                	 var contextRoot = '/project';
+                     // CSRF 토큰 설정
+                     var csrfToken = $('meta[name="_csrf"]').attr('content');
+                     var csrfHeader = $('meta[name="_csrf_header"]').attr('content');
+                     
+                	 getAllReply(); // reply 함수 호출
                      getAllRecipeReview(); // review 함수 호출
-                             
+                  	 
+                     // AJAX 전역 설정: 모든 요청에 CSRF 토큰 추가
+                     $.ajaxSetup({
+                         beforeSend: function (xhr) {
+                             xhr.setRequestHeader(csrfHeader, csrfToken); // CSRF 토큰을 헤더에 추가
+                         }
+                     });
+                     
+                     var isLoggedIn = false;
+                     
+                	 // 좋아요 초기 상태 가져오기
+                     function loadLikeStatus() {
+                         var recipeBoardId = $('#recipeBoardId').val(); // 게시글 ID
+                         $.get(contextRoot + '/recipeboard/' + recipeBoardId + '/like-count', function (response) {
+                             $('#like-count').text(response.likeCount); // 좋아요 개수 업데이트
+                         });
+                         
+                      // 로그인한 사용자의 좋아요 여부 확인
+                         $.get(contextRoot + '/recipeboard/' + recipeBoardId + '/like-status', function(response) {
+                            isLoggedIn = true; // 로그인 확인
+                            if (response.liked) {
+                               $('#like-button').text('좋아요 취소');
+                            } else {
+                               $('#like-button').text('좋아요');
+                            }
+                         }).fail(function(xhr) {
+                        	if (xhr.status === 403) {
+                        	    console.warn('로그인이 필요합니다.'); // 경고만 출력, 네트워크 에러 발생 안함
+                        	    isLoggedIn = false;
+                        	    $('#like-button').text('로그인 후 사용 가능');
+                        	}
+                         });
+                     }
+
+                     // 좋아요 버튼 클릭 이벤트
+                     $('#like-button').click(function () {
+				    var recipeBoardId = $('#recipeBoardId').val(); // 게시글 ID
+				    $.ajax({
+				        type: 'POST',
+				        url: contextRoot + '/recipeboard/' + recipeBoardId + '/like', // 좋아요 토글 API
+				        success: function (response) {
+				            if (response.message === "로그인이 필요한 서비스입니다.") {
+				                alert(response.message); // 로그인 필요 메시지 표시
+				            } else {
+				                if (response.liked) {
+				                    $('#like-button').text('좋아요 취소'); // 버튼 텍스트 변경
+				                    alert('좋아요가 설정되었습니다.');
+				                } else {
+				                    $('#like-button').text('좋아요'); // 버튼 텍스트 변경
+				                    alert('좋아요가 취소되었습니다.');
+				                }
+				            }
+				            $('#like-count').text(response.likeCount); // 좋아요 개수 업데이트
+				        }
+				    });
+				});
+                     
+                     loadLikeStatus();
+                     
+                     
+                    $(document).ajaxSend(function(e, xhr, opt){
+                 		var token = $("meta[name='_csrf']").attr("content");
+                 		var header = $("meta[name='_csrf_header']").attr("content");
+                 		
+                 		xhr.setRequestHeader(header, token);
+                 	});
+                 	
+                 	$(document).ready(function(){
+                     	  
+                                      getAllReply(); // reply 함수 호출
+                                      getAllRecipeReview(); // review 함수 호출
+                                              
+
                      $('#btnAdd').click(function() {
                         var recipeBoardId = $('#recipeBoardId').val(); // 게시판 번호 데이터
                       	var memberId = $('#memberId').val();
@@ -477,7 +589,7 @@
                                                       + '&nbsp;&nbsp;'
                                                       + '<button class="btn_review_update" >수정</button>'
                                                       + '<button class="btn_review_delete" >삭제</button>'
-                                                      + '<div class="review_images image-list">' + imageHTML + '</div>' // 📸 이미지 추가
+                                                      + '<div class="review_images image-list">' + imageHTML + '</div>' // 이미지 추가
                                                       + '</pre>'
                                                       + '</div>';
                                                       
@@ -570,7 +682,6 @@
                                                          }
                                                       });
                                              }); // end reviews.on
-                            
                   }); // end document()
                   
                                    

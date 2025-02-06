@@ -14,6 +14,7 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
+import org.springframework.web.multipart.commons.CommonsMultipartResolver;
 
 import javax.sql.DataSource;
 import java.util.Properties;
@@ -22,7 +23,7 @@ import java.util.Properties;
 @Configuration
 @EnableTransactionManagement // 트랜잭션 어노테이션 활성화
 @EnableScheduling
-@ComponentScan(basePackages = {"com.dishcovery.project"})
+@ComponentScan(basePackages = {"com.dishcovery.project.service"})
 @MapperScan(basePackages = {"com.dishcovery.project.persistence"})
 public class RootConfig {
 
@@ -82,4 +83,12 @@ public class RootConfig {
 
         return mailSender;
     }
+    
+	@Bean
+	public CommonsMultipartResolver multipartResolver() {
+	    CommonsMultipartResolver resolver = new CommonsMultipartResolver();
+	    resolver.setDefaultEncoding("UTF-8");
+	    resolver.setMaxUploadSize(10485760); // 10MB
+	    return resolver;
+	}
 }
