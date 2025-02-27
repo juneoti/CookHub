@@ -1,15 +1,15 @@
 package com.dishcovery.project.config;
 
-import java.util.Properties;
-
-import javax.sql.DataSource;
-
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
 import org.apache.ibatis.session.SqlSessionFactory;
 import org.mybatis.spring.SqlSessionFactoryBean;
 import org.mybatis.spring.annotation.MapperScan;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.PropertySource;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -20,8 +20,8 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.commons.CommonsMultipartResolver;
 
-import com.zaxxer.hikari.HikariConfig;
-import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
+import java.util.Properties;
 
 // root-context.xml과 동일
 @Configuration
@@ -30,15 +30,31 @@ import com.zaxxer.hikari.HikariDataSource;
 @EnableAsync
 @ComponentScan(basePackages = {"com.dishcovery.project.service"})
 @MapperScan(basePackages = {"com.dishcovery.project.persistence"})
+@PropertySource("classpath:config/application.properties") // application.properties 파일 위치 지정
 public class RootConfig {
+
+    @Value("${db.url}")
+    private String dbUrl;
+
+    @Value("${db.username}")
+    private String dbUsername;
+
+    @Value("${db.password}")
+    private String dbPassword;
+
+    @Value("${mail.username}")
+    private String mailUsername;
+
+    @Value("${mail.password}")
+    private String mailPassword;
 
     @Bean // 스프링 bean으로 설정
     public DataSource dataSource() { // DataSource 객체 리턴 메서드
         HikariConfig config = new HikariConfig(); // 설정 객체
         config.setDriverClassName("oracle.jdbc.OracleDriver"); // jdbc 드라이버 정보
-        config.setJdbcUrl("jdbc:oracle:thin:@192.168.0.138:1521:xe"); // DB 연결 url
-        config.setUsername("cookhub"); // DB 사용자 아이디
-        config.setPassword("1234"); // DB 사용자 비밀번호
+        config.setJdbcUrl(dbUrl); // DB 연결 url
+        config.setUsername(dbUsername); // DB 사용자 아이디
+        config.setPassword(dbPassword); // DB 사용자 비밀번호
         
         config.setMaximumPoolSize(10); // 최대 풀(Pool) 크기 설정
         config.setConnectionTimeout(30000); // Connection 타임 아웃 설정(30초)
@@ -81,8 +97,8 @@ public class RootConfig {
         JavaMailSenderImpl mailSender = new JavaMailSenderImpl();
         mailSender.setHost("smtp.gmail.com");
         mailSender.setPort(587);
-        mailSender.setUsername("ksh71192@gmail.com");
-        mailSender.setPassword("fjeofjynknzvwaid");
+        mailSender.setUsername(mailUsername);
+        mailSender.setPassword(mailPassword);
         mailSender.setDefaultEncoding("utf-8");
         mailSender.setJavaMailProperties(properties);
 
