@@ -1,7 +1,7 @@
 package com.dishcovery.project.config;
 
-import javax.sql.DataSource;
-
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
 import org.apache.ibatis.session.SqlSessionFactory;
 import org.mybatis.spring.SqlSessionFactoryBean;
 import org.mybatis.spring.annotation.MapperScan;
@@ -10,15 +10,20 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.JavaMailSenderImpl;
+import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
+import org.springframework.web.multipart.commons.CommonsMultipartResolver;
 
-import com.zaxxer.hikari.HikariConfig;
-import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
+import java.util.Properties;
 
 // root-context.xml과 동일
 @Configuration
 @EnableTransactionManagement // 트랜잭션 어노테이션 활성화
-@ComponentScan(basePackages = {"com.dishcovery.project"})
+@EnableScheduling
+@ComponentScan(basePackages = {"com.dishcovery.project.service"})
 @MapperScan(basePackages = {"com.dishcovery.project.persistence"})
 public class RootConfig {
 
@@ -59,4 +64,31 @@ public class RootConfig {
         return new DataSourceTransactionManager(dataSource());
     }
 
+    @Bean
+    public JavaMailSender getJavaMailSender() {
+        Properties properties = new Properties();
+        properties.put("mail.smtp.auth", true);
+        properties.put("mail.transport.protocol", "smtp");
+        properties.put("mail.smtp.starttls.enable", true);
+        properties.put("mail.smtp.starttls.required", true);
+        properties.put("mail.debug", true);
+
+        JavaMailSenderImpl mailSender = new JavaMailSenderImpl();
+        mailSender.setHost("smtp.gmail.com");
+        mailSender.setPort(587);
+        mailSender.setUsername("ksh71192@gmail.com");
+        mailSender.setPassword("fjeofjynknzvwaid");
+        mailSender.setDefaultEncoding("utf-8");
+        mailSender.setJavaMailProperties(properties);
+
+        return mailSender;
+    }
+    
+	@Bean
+	public CommonsMultipartResolver multipartResolver() {
+	    CommonsMultipartResolver resolver = new CommonsMultipartResolver();
+	    resolver.setDefaultEncoding("UTF-8");
+	    resolver.setMaxUploadSize(10485760); // 10MB
+	    return resolver;
+	}
 }

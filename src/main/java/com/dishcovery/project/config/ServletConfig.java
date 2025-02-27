@@ -36,6 +36,13 @@ public class ServletConfig implements WebMvcConfigurer {
 		.addResourceLocations("file:C:/uploads/");
 	}
 	
+
+	// 파일을 저장할 경로 bean 생성
+	@Bean
+	public String uploadPath() {
+		return "C:\\reviewuploads";
+		}
+	
 	@Bean
 	public CommonsMultipartResolver multipartResolver() {
 	    CommonsMultipartResolver resolver = new CommonsMultipartResolver();
@@ -43,5 +50,6 @@ public class ServletConfig implements WebMvcConfigurer {
 	    resolver.setMaxUploadSize(10485760); // 10MB
 	    return resolver;
 	}
+
 
 } // end ServletConfig
